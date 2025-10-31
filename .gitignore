@@ -1,0 +1,32 @@
+# Dependencies
+/packages
+/node_modules
+
+# Build results
+[Bb]in/
+[Oo]bj/
+
+# Rider
+.idea/
+*.sln.iml
+
+# Visual Studio
+.vs/
+*.suo
+*.user
+*.userosscache
+*.sln.docstates
+
+# User-specific files
+*.csproj.user
+*.vbproj.user
+secrets.json
+appsettings.Development.json
+
+# Log files
+[Ll]ogs/
+*.log
+
+# Other
+*.bak
+*.tmp

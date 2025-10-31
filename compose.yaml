@@ -1,0 +1,18 @@
+services:
+  db:
+    image: postgres:16
+    container_name: firmeza_db
+    restart: always
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: SuperSecure123
+      POSTGRES_DB: firmeza_db
+    ports:
+      - "5433:5432"   # Cambiado para evitar conflicto con el puerto local
+    volumes:
+      - firmeza_pgdata:/var/lib/postgresql/data
+
+volumes:
+  firmeza_pgdata:
+
+

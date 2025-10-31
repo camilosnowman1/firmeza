@@ -1,0 +1,59 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <title>@ViewData["Title"] - Firmeza Admin</title>
+    <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css"/>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
+    <link rel="stylesheet" href="~/css/site.css" asp-append-version="true"/>
+</head>
+<body>
+
+<div class="d-flex" id="wrapper">
+    <!-- Sidebar -->
+    @if (User.Identity.IsAuthenticated)
+    {
+        <div class="bg-dark border-right vh-100" id="sidebar-wrapper">
+            <div class="sidebar-heading text-white">Firmeza Admin</div>
+            <div class="list-group list-group-flush">
+                <a asp-controller="Home" asp-action="Index" class="list-group-item list-group-item-action bg-dark text-white"> <i class="bi bi-house-door-fill"></i> Dashboard </a>
+                <a asp-controller="Products" asp-action="Index" class="list-group-item list-group-item-action bg-dark text-white"> <i class="bi bi-box-seam-fill"></i> Productos </a>
+                <a asp-controller="Customers" asp-action="Index" class="list-group-item list-group-item-action bg-dark text-white"> <i class="bi bi-people-fill"></i> Clientes </a>
+                <a asp-controller="Sales" asp-action="Index" class="list-group-item list-group-item-action bg-dark text-white"> <i class="bi bi-cart-check-fill"></i> Ventas </a>
+            </div>
+        </div>
+    }
+
+    <!-- Page Content -->
+    <div id="page-content-wrapper">
+        <nav class="navbar navbar-expand-lg navbar-light bg-light border-bottom">
+            <div class="container-fluid">
+                @if (User.Identity.IsAuthenticated)
+                {
+                    <span class="navbar-text">
+                        Bienvenido, <strong>@User.Identity.Name</strong>
+                    </span>
+                    <form asp-controller="Account" asp-action="Logout" method="post" class="d-flex">
+                        <button type="submit" class="btn btn-link nav-link">Cerrar Sesión</button>
+                    </form>
+                }
+                else
+                {
+                     <a class="navbar-brand" asp-controller="Account" asp-action="Login">Iniciar Sesión</a>
+                }
+            </div>
+        </nav>
+
+        <main class="container-fluid p-4">
+            @RenderBody()
+        </main>
+    </div>
+</div>
+
+<script src="~/lib/jquery/dist/jquery.min.js"></script>
+<script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
+<script src="~/js/site.js" asp-append-version="true"></script>
+@await RenderSectionAsync("Scripts", required: false)
+</body>
+</html>
