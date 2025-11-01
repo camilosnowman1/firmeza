@@ -1,0 +1,38 @@
+@{ ViewData["Title"] = "Import Data from Excel"; }
+
+<h1>@ViewData["Title"]</h1>
+<hr />
+
+@if (TempData["ErrorMessage"] != null)
+{
+    <div class="alert alert-danger">@TempData["ErrorMessage"]</div>
+}
+
+@if (TempData["ImportLog"] != null)
+{
+    <div class="alert alert-success">
+        <h4 class="alert-heading">Import Result</h4>
+        <pre><code>@TempData["ImportLog"]</code></pre>
+    </div>
+}
+
+<div class="alert alert-info" role="alert">
+    <h4 class="alert-heading">Instructions</h4>
+    <p>Select an Excel file (.xlsx) to bulk import data. The system will process the information and save it to the corresponding tables.</p>
+    <hr>
+    <p class="mb-0">Ensure the file contains recognizable column names like 'Product', 'Customer', 'Price', 'Quantity', etc.</p>
+</div>
+
+<div class="row">
+    <div class="col-md-6">
+        <form asp-action="Upload" method="post" enctype="multipart/form-data">
+            <div class="form-group mb-3">
+                <label for="file" class="form-label">Select Excel file</label>
+                <input type="file" name="file" class="form-control" accept=".xlsx" required />
+            </div>
+            <div class="form-group">
+                <button type="submit" class="btn btn-primary"> <i class="bi bi-upload"></i> Import </button>
+            </div>
+        </form>
+    </div>
+</div>

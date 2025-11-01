@@ -28,6 +28,8 @@
       <PackageReference Include="Microsoft.AspNetCore.Identity.EntityFrameworkCore" Version="8.0.0" />
       <PackageReference Include="EPPlus" Version="7.0.0" />
       <PackageReference Include="QuestPDF" Version="2023.12.2" />
+      <PackageReference Include="SkiaSharp.NativeAssets.Linux.NoDependencies" Version="2.88.6" />
+      <PackageReference Include="HarfBuzzSharp.NativeAssets.Linux" Version="7.3.0" />
     </ItemGroup>
 
 </Project>

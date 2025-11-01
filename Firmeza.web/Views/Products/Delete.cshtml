@@ -1,12 +1,12 @@
 @model Firmeza.Web.Data.Entities.Product
 
-@{ ViewData["Title"] = "Eliminar Producto"; }
+@{ ViewData["Title"] = "Delete Product"; }
 
 <h1>@ViewData["Title"]</h1>
 
-<h3>¿Estás seguro de que quieres eliminar este producto?</h3>
+<h3>Are you sure you want to delete this?</h3>
 <div>
-    <h4>Producto</h4>
+    <h4>Product</h4>
     <hr />
     <dl class="row">
         <dt class = "col-sm-2">
@@ -37,7 +37,7 @@
     
     <form asp-action="Delete">
         <input type="hidden" asp-for="Id" />
-        <input type="submit" value="Eliminar" class="btn btn-danger" /> |
-        <a asp-action="Index">Volver a la Lista</a>
+        <input type="submit" value="Delete" class="btn btn-danger" /> |
+        <a asp-action="Index">Back to List</a>
     </form>
 </div>

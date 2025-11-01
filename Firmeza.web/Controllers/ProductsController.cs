@@ -1,8 +1,10 @@
 using Firmeza.Web.Data;
 using Firmeza.Web.Data.Entities;
+using Firmeza.Web.Helpers;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using OfficeOpenXml;
 
 namespace Firmeza.Web.Controllers;
 
@@ -17,11 +19,59 @@ public class ProductsController : Controller
     }
 
     // GET: Products
-    public async Task<IActionResult> Index()
+    public async Task<IActionResult> Index(string searchString, int? pageNumber)
     {
-        return View(await _context.Products.ToListAsync());
+        ViewData["CurrentFilter"] = searchString;
+
+        var products = from p in _context.Products.AsNoTracking() select p;
+
+        if (!string.IsNullOrEmpty(searchString))
+        {
+            products = products.Where(p => p.Name.Contains(searchString));
+        }
+
+        int pageSize = 10;
+        return View(await PaginatedList<Product>.CreateAsync(products.OrderBy(p => p.Name), pageNumber ?? 1, pageSize));
     }
 
+    // GET: Products/ExportToExcel
+    public async Task<IActionResult> ExportToExcel()
+    {
+        var products = await _context.Products.OrderBy(p => p.Name).ToListAsync();
+        
+        ExcelPackage.LicenseContext = LicenseContext.NonCommercial;
+        using var package = new ExcelPackage();
+        
+        var worksheet = package.Workbook.Worksheets.Add("Products");
+        
+        // Add headers
+        worksheet.Cells[1, 1].Value = "Id";
+        worksheet.Cells[1, 2].Value = "Name";
+        worksheet.Cells[1, 3].Value = "Description";
+        worksheet.Cells[1, 4].Value = "Price";
+        worksheet.Cells[1, 5].Value = "Stock";
+        worksheet.Cells[1, 6].Value = "CreatedAt";
+
+        // Add data
+        for (int i = 0; i < products.Count; i++)
+        {
+            worksheet.Cells[i + 2, 1].Value = products[i].Id;
+            worksheet.Cells[i + 2, 2].Value = products[i].Name;
+            worksheet.Cells[i + 2, 3].Value = products[i].Description;
+            worksheet.Cells[i + 2, 4].Value = products[i].Price;
+            worksheet.Cells[i + 2, 5].Value = products[i].Stock;
+            worksheet.Cells[i + 2, 6].Value = products[i].CreatedAt.ToString("yyyy-MM-dd HH:mm:ss");
+        }
+
+        var stream = new MemoryStream();
+        await package.SaveAsAsync(stream);
+        stream.Position = 0;
+        
+        var fileName = $"Products_{DateTime.Now:yyyyMMddHHmmss}.xlsx";
+        return File(stream, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", fileName);
+    }
+
+    // Other CRUD actions remain the same...
     // GET: Products/Create
     public IActionResult Create()
     {

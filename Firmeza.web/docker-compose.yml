@@ -1,16 +1,33 @@
 services:
+  # Database Service
   db:
     image: postgres:16
     container_name: firmeza-db
     restart: unless-stopped
     environment:
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: postgres
-      POSTGRES_DB: firmeza
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB}
     ports:
-      - "5434:5432"
+      - "${DB_PORT}:5432"
     volumes:
       - firmeza_pg_data:/var/lib/postgresql/data
+
+  # Web Application Service
+  web:
+    container_name: firmeza-web
+    build:
+      context: ..
+      dockerfile: Firmeza.web/Dockerfile
+    ports:
+      - "8080:8080"
+      - "8081:8081"
+    depends_on:
+      - db
+    environment:
+      - ConnectionStrings__DefaultConnection=Host=db;Port=5432;Database=${POSTGRES_DB};Username=${POSTGRES_USER};Password=${POSTGRES_PASSWORD}
+      - ASPNETCORE_ENVIRONMENT=Development
+      - ASPNETCORE_URLS=http://+:8080
 
 volumes:
   firmeza_pg_data:

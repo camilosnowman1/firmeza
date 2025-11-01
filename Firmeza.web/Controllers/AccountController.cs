@@ -37,7 +37,7 @@ public class AccountController : Controller
                 var isAdmin = await _userManager.IsInRoleAsync(user, "Admin");
                 if (!isAdmin)
                 {
-                    ModelState.AddModelError(string.Empty, "Acceso denegado. Solo los administradores pueden iniciar sesión.");
+                    ModelState.AddModelError(string.Empty, "Access Denied. Only administrators can log in.");
                     return View(model);
                 }
 
@@ -47,7 +47,7 @@ public class AccountController : Controller
                     return RedirectToAction("Index", "Home");
                 }
             }
-            ModelState.AddModelError(string.Empty, "Inicio de sesión inválido.");
+            ModelState.AddModelError(string.Empty, "Invalid login attempt.");
         }
         return View(model);
     }

@@ -18,9 +18,10 @@
             <div class="sidebar-heading text-white">Firmeza Admin</div>
             <div class="list-group list-group-flush">
                 <a asp-controller="Home" asp-action="Index" class="list-group-item list-group-item-action bg-dark text-white"> <i class="bi bi-house-door-fill"></i> Dashboard </a>
-                <a asp-controller="Products" asp-action="Index" class="list-group-item list-group-item-action bg-dark text-white"> <i class="bi bi-box-seam-fill"></i> Productos </a>
-                <a asp-controller="Customers" asp-action="Index" class="list-group-item list-group-item-action bg-dark text-white"> <i class="bi bi-people-fill"></i> Clientes </a>
-                <a asp-controller="Sales" asp-action="Index" class="list-group-item list-group-item-action bg-dark text-white"> <i class="bi bi-cart-check-fill"></i> Ventas </a>
+                <a asp-controller="Products" asp-action="Index" class="list-group-item list-group-item-action bg-dark text-white"> <i class="bi bi-box-seam-fill"></i> Products </a>
+                <a asp-controller="Customers" asp-action="Index" class="list-group-item list-group-item-action bg-dark text-white"> <i class="bi bi-people-fill"></i> Customers </a>
+                <a asp-controller="Sales" asp-action="Index" class="list-group-item list-group-item-action bg-dark text-white"> <i class="bi bi-cart-check-fill"></i> Sales </a>
+                <a asp-controller="Import" asp-action="Index" class="list-group-item list-group-item-action bg-dark text-white"> <i class="bi bi-table"></i> Import/Export </a>
             </div>
         </div>
     }
@@ -32,15 +33,15 @@
                 @if (User.Identity.IsAuthenticated)
                 {
                     <span class="navbar-text">
-                        Bienvenido, <strong>@User.Identity.Name</strong>
+                        Welcome, <strong>@User.Identity.Name</strong>
                     </span>
                     <form asp-controller="Account" asp-action="Logout" method="post" class="d-flex">
-                        <button type="submit" class="btn btn-link nav-link">Cerrar Sesión</button>
+                        <button type="submit" class="btn btn-link nav-link">Logout</button>
                     </form>
                 }
                 else
                 {
-                     <a class="navbar-brand" asp-controller="Account" asp-action="Login">Iniciar Sesión</a>
+                     <a class="navbar-brand" asp-controller="Account" asp-action="Login">Login</a>
                 }
             </div>
         </nav>

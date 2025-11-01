@@ -1,23 +1,41 @@
-﻿FROM mcr.microsoft.com/dotnet/aspnet:8.0 AS base
-USER $APP_UID
+﻿# Stage 1: Base image for the final runtime environment
+FROM mcr.microsoft.com/dotnet/aspnet:8.0 AS base
 WORKDIR /app
 EXPOSE 8080
 EXPOSE 8081
 
+# Install common native dependencies for graphics/fonts (SkiaSharp, HarfBuzzSharp)
+# This is crucial for QuestPDF to work in Linux containers
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    libgdiplus \
+    fontconfig \
+    libc6-dev \
+    && rm -rf /var/lib/apt/lists/*
+
+# Stage 2: Build environment with the .NET SDK
 FROM mcr.microsoft.com/dotnet/sdk:8.0 AS build
-ARG BUILD_CONFIGURATION=Release
 WORKDIR /src
-COPY ["WebApplication1/WebApplication1.csproj", "WebApplication1/"]
-RUN dotnet restore "WebApplication1/WebApplication1.csproj"
+
+# Copy solution and project files first to leverage Docker layer caching
+COPY ["Firmeza.sln", "./"]
+COPY ["Firmeza.web/Firmeza.web.csproj", "Firmeza.web/"]
+
+# Restore dependencies
+RUN dotnet restore "Firmeza.sln"
+
+# Copy the rest of the source code
 COPY . .
-WORKDIR "/src/WebApplication1"
-RUN dotnet build "./WebApplication1.csproj" -c $BUILD_CONFIGURATION -o /app/build
 
+# Build the project
+WORKDIR "/src/Firmeza.web"
+RUN dotnet build "Firmeza.web.csproj" -c Release -o /app/build
+
+# Stage 3: Publish the application
 FROM build AS publish
-ARG BUILD_CONFIGURATION=Release
-RUN dotnet publish "./WebApplication1.csproj" -c $BUILD_CONFIGURATION -o /app/publish /p:UseAppHost=false
+RUN dotnet publish "Firmeza.web.csproj" -c Release -o /app/publish /p:UseAppHost=false
 
+# Stage 4: Final image, containing only the published application
 FROM base AS final
 WORKDIR /app
 COPY --from=publish /app/publish .
-ENTRYPOINT ["dotnet", "WebApplication1.dll"]
+ENTRYPOINT ["dotnet", "Firmeza.web.dll"]
