@@ -1,26 +1,14 @@
-@model Firmeza.Web.Data.Entities.Rental
+@model Firmeza.Core.Entities.Rental
 
 @{ ViewData["Title"] = "Delete Rental"; }
 
-<h1>@ViewData["Title"]</h1>
+<h2>Delete Rental</h2>
 
 <h3>Are you sure you want to delete this?</h3>
 <div>
     <h4>Rental</h4>
     <hr />
     <dl class="row">
-        <dt class = "col-sm-2">
-            @Html.DisplayNameFor(model => model.Customer.FullName)
-        </dt>
-        <dd class = "col-sm-10">
-            @Html.DisplayFor(model => model.Customer.FullName)
-        </dd>
-        <dt class = "col-sm-2">
-            @Html.DisplayNameFor(model => model.Vehicle.Name)
-        </dt>
-        <dd class = "col-sm-10">
-            @Html.DisplayFor(model => model.Vehicle.Name)
-        </dd>
         <dt class = "col-sm-2">
             @Html.DisplayNameFor(model => model.StartDate)
         </dt>
@@ -32,18 +20,6 @@
         </dt>
         <dd class = "col-sm-10">
             @Html.DisplayFor(model => model.EndDate)
-        </dd>
-        <dt class = "col-sm-2">
-            @Html.DisplayNameFor(model => model.TotalHours)
-        </dt>
-        <dd class = "col-sm-10">
-            @Html.DisplayFor(model => model.TotalHours)
-        </dd>
-        <dt class = "col-sm-2">
-            @Html.DisplayNameFor(model => model.TotalAmount)
-        </dt>
-        <dd class = "col-sm-10">
-            @Html.DisplayFor(model => model.TotalAmount)
         </dd>
     </dl>
     

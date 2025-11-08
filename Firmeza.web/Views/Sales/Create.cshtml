@@ -1,57 +1,36 @@
-@model Firmeza.Web.Controllers.SaleViewModel
+@model Firmeza.Web.Models.SaleViewModel
 
 @{ ViewData["Title"] = "Create Sale"; }
 
-<h1>@ViewData["Title"]</h1>
+<h2>Create a New Sale</h2>
 <hr />
 
-<form asp-action="Create" method="post">
+<form asp-action="Create">
     <div class="row">
         <div class="col-md-6">
             <div class="form-group">
                 <label asp-for="CustomerId" class="control-label">Customer</label>
-                <select asp-for="CustomerId" class="form-control" asp-items="Model.Customers">
-                    <option value="">-- Select a Customer --</option>
-                </select>
-                <span asp-validation-for="CustomerId" class="text-danger"></span>
+                <select asp-for="CustomerId" class="form-control" asp-items="Model.Customers"></select>
             </div>
         </div>
     </div>
 
-    <hr />
-    
-    <h4>Add Products to Sale</h4>
-    <div class="row align-items-end">
-        <div class="col-md-5">
-            <label for="product-select">Product</label>
-            <select id="product-select" class="form-control" asp-items="Model.Products">
-                 <option value="">-- Select a Product --</option>
-            </select>
-        </div>
-        <div class="col-md-2">
-            <label for="product-quantity">Quantity</label>
-            <input type="number" id="product-quantity" class="form-control" value="1" min="1" />
-        </div>
-        <div class="col-md-2">
-            <button type="button" id="add-product-btn" class="btn btn-info">Add Product</button>
-        </div>
+    <h4 class="mt-4">Sale Items</h4>
+    <div id="items-container">
+        <!-- Items will be added here by JavaScript -->
     </div>
 
-    <hr />
-
-    <h4>Sale Items</h4>
-    <table class="table">
-        <thead>
-            <tr>
-                <th>Product</th>
-                <th>Quantity</th>
-                <th></th>
-            </tr>
-        </thead>
-        <tbody id="sale-items-tbody">
-            <!-- Items will be added here by JavaScript -->
-        </tbody>
-    </table>
+    <div class="row mt-3">
+        <div class="col-md-5">
+            <select id="product-selector" class="form-control" asp-items="Model.Products"></select>
+        </div>
+        <div class="col-md-2">
+            <input id="quantity-input" type="number" class="form-control" value="1" min="1" />
+        </div>
+        <div class="col-md-3">
+            <button type="button" id="add-item-btn" class="btn btn-info">Add Product</button>
+        </div>
+    </div>
 
     <div class="form-group mt-4">
         <input type="submit" value="Create Sale" class="btn btn-primary" />
@@ -60,45 +39,44 @@
 </form>
 
 @section Scripts {
+    @{await Html.RenderPartialAsync("_ValidationScriptsPartial");}
     <script>
-        $(document).ready(function () {
+        document.addEventListener('DOMContentLoaded', function () {
+            const addItemBtn = document.getElementById('add-item-btn');
+            const itemsContainer = document.getElementById('items-container');
+            const productSelector = document.getElementById('product-selector');
+            const quantityInput = document.getElementById('quantity-input');
             let itemIndex = 0;
 
-            $('#add-product-btn').on('click', function () {
-                const productId = $('#product-select').val();
-                const productName = $('#product-select option:selected').text();
-                const quantity = $('#product-quantity').val();
+            addItemBtn.addEventListener('click', function () {
+                const productId = productSelector.value;
+                const productName = productSelector.options[productSelector.selectedIndex].text;
+                const quantity = quantityInput.value;
 
-                if (!productId || !quantity || quantity <= 0) {
-                    alert("Please select a product and enter a valid quantity.");
+                if (!productId || !quantity || quantity < 1) {
+                    alert('Please select a product and enter a valid quantity.');
                     return;
                 }
 
-                // Add item to the table
-                $('#sale-items-tbody').append(`
-                    <tr data-id="${itemIndex}">
-                        <td>${productName}</td>
-                        <td>${quantity}</td>
-                        <td><button type="button" class="btn btn-danger btn-sm remove-item">Remove</button></td>
-                    </tr>
-                `);
-
-                // Add hidden inputs for model binding
-                $('form').append(`<input type="hidden" name="Items[${itemIndex}].ProductId" value="${productId}" />`);
-                $('form').append(`<input type="hidden" name="Items[${itemIndex}].Quantity" value="${quantity}" />`);
+                const itemHtml = `
+                    <div class="row mb-2 item-row">
+                        <div class="col-md-5">${productName}</div>
+                        <div class="col-md-2">Qty: ${quantity}</div>
+                        <div class="col-md-3">
+                            <input type="hidden" name="Items[${itemIndex}].ProductId" value="${productId}" />
+                            <input type="hidden" name="Items[${itemIndex}].Quantity" value="${quantity}" />
+                            <button type="button" class="btn btn-danger btn-sm remove-item-btn">Remove</button>
+                        </div>
+                    </div>`;
                 
+                itemsContainer.insertAdjacentHTML('beforeend', itemHtml);
                 itemIndex++;
-                
-                // Clear inputs
-                $('#product-select').val('');
-                $('#product-quantity').val(1);
             });
 
-            // Remove item
-            $(document).on('click', '.remove-item', function () {
-                const rowIndex = $(this).closest('tr').data('id');
-                $(this).closest('tr').remove();
-                $(`input[name^='Items[${rowIndex}]']`).remove();
+            itemsContainer.addEventListener('click', function (e) {
+                if (e.target && e.target.classList.contains('remove-item-btn')) {
+                    e.target.closest('.item-row').remove();
+                }
             });
         });
     </script>

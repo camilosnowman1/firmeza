@@ -1,3 +1,4 @@
+using Firmeza.Infrastructure.Persistence; // Corrected namespace
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Design;
 
@@ -7,11 +8,10 @@ public class DesignTimeDbContextFactory : IDesignTimeDbContextFactory<Applicatio
 {
     public ApplicationDbContext CreateDbContext(string[] args)
     {
-        var cs = "Host=localhost;Port=5434;Database=firmeza;Username=postgres;Password=postgres";
-        var options = new DbContextOptionsBuilder<ApplicationDbContext>()
-            .UseNpgsql(cs)
-            .Options;
+        var optionsBuilder = new DbContextOptionsBuilder<ApplicationDbContext>();
+        // This connection string is for design-time tools, not for runtime.
+        optionsBuilder.UseNpgsql("Host=localhost;Database=firmeza_design;Username=postgres;Password=postgres");
 
-        return new ApplicationDbContext(options);
+        return new ApplicationDbContext(optionsBuilder.Options);
     }
 }

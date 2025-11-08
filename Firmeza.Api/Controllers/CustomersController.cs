@@ -4,81 +4,85 @@ using Firmeza.Core.Entities;
 using Firmeza.Core.Interfaces;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using System.Collections.Generic;
+using System.Threading.Tasks;
 
 namespace Firmeza.Api.Controllers;
 
-[Route("api/[controller]")]
+[Authorize]
 [ApiController]
-[Authorize(Roles = "Admin")] // Protect all endpoints in this controller by default
+[ApiVersion("1.0")] // Added API Version
+[Route("api/v{version:apiVersion}/[controller]")] // Updated Route
 public class CustomersController : ControllerBase
 {
     private readonly ICustomerRepository _customerRepository;
+    private readonly IEmailService _emailService;
     private readonly IMapper _mapper;
 
-    public CustomersController(ICustomerRepository customerRepository, IMapper mapper)
+    public CustomersController(ICustomerRepository customerRepository, IEmailService emailService, IMapper mapper)
     {
         _customerRepository = customerRepository;
+        _emailService = emailService;
         _mapper = mapper;
     }
 
-    // GET: api/Customers
+    // GET: api/v1/Customers
     [HttpGet]
     public async Task<ActionResult<IEnumerable<CustomerDto>>> GetCustomers()
     {
         var customers = await _customerRepository.GetAllAsync();
-        var customerDtos = _mapper.Map<IEnumerable<CustomerDto>>(customers);
-        return Ok(customerDtos);
+        return Ok(_mapper.Map<IEnumerable<CustomerDto>>(customers));
     }
 
-    // GET: api/Customers/5
+    // GET: api/v1/Customers/5
     [HttpGet("{id}")]
     public async Task<ActionResult<CustomerDto>> GetCustomer(int id)
     {
         var customer = await _customerRepository.GetByIdAsync(id);
-
         if (customer == null)
         {
             return NotFound();
         }
-
-        var customerDto = _mapper.Map<CustomerDto>(customer);
-        return Ok(customerDto);
+        return Ok(_mapper.Map<CustomerDto>(customer));
     }
 
-    // POST: api/Customers
+    // POST: api/v1/Customers
     [HttpPost]
     public async Task<ActionResult<CustomerDto>> PostCustomer(CreateCustomerDto createCustomerDto)
     {
         var customer = _mapper.Map<Customer>(createCustomerDto);
-        
-        // Optional: Check if document already exists to return a more specific error
-        // var existingCustomer = (await _customerRepository.GetAllAsync()).FirstOrDefault(c => c.Document == customer.Document);
-        // if (existingCustomer != null) return BadRequest("A customer with this document already exists.");
-
         await _customerRepository.AddAsync(customer);
+        
+        // Send welcome email
+        try
+        {
+            await _emailService.SendEmailAsync(customer.Email, "Welcome to Firmeza API!", "<h1>Thank you for registering!</h1><p>Your API account has been created successfully.</p>");
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Failed to send welcome email from API: {ex.Message}");
+        }
 
-        var customerDto = _mapper.Map<CustomerDto>(customer);
-
-        return CreatedAtAction(nameof(GetCustomer), new { id = customerDto.Id }, customerDto);
+        return CreatedAtAction(nameof(GetCustomer), new { id = customer.Id, version = HttpContext.GetRequestedApiVersion()?.ToString() }, _mapper.Map<CustomerDto>(customer));
     }
 
-    // PUT: api/Customers/5
+    // PUT: api/v1/Customers/5
     [HttpPut("{id}")]
     public async Task<IActionResult> PutCustomer(int id, UpdateCustomerDto updateCustomerDto)
     {
-        var customer = await _customerRepository.GetByIdAsync(id);
-        if (customer == null)
+        var existingCustomer = await _customerRepository.GetByIdAsync(id);
+        if (existingCustomer == null)
         {
             return NotFound();
         }
 
-        _mapper.Map(updateCustomerDto, customer);
-        await _customerRepository.UpdateAsync(customer);
+        _mapper.Map(updateCustomerDto, existingCustomer);
+        await _customerRepository.UpdateAsync(existingCustomer);
 
         return NoContent();
     }
 
-    // DELETE: api/Customers/5
+    // DELETE: api/v1/Customers/5
     [HttpDelete("{id}")]
     public async Task<IActionResult> DeleteCustomer(int id)
     {
@@ -89,7 +93,6 @@ public class CustomersController : ControllerBase
         }
 
         await _customerRepository.DeleteAsync(id);
-
         return NoContent();
     }
 }

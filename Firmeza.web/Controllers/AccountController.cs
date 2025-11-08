@@ -1,4 +1,5 @@
-using Firmeza.Web.Data.Entities;
+using Firmeza.Core.Entities; // Correct namespace for ApplicationUser
+using Firmeza.Web.Models; // Correct namespace for LoginViewModel
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 
@@ -33,7 +34,6 @@ public class AccountController : Controller
             var user = await _userManager.FindByEmailAsync(model.Email);
             if (user != null)
             {
-                // Check if the user is an Admin
                 var isAdmin = await _userManager.IsInRoleAsync(user, "Admin");
                 if (!isAdmin)
                 {
@@ -58,11 +58,4 @@ public class AccountController : Controller
         await _signInManager.SignOutAsync();
         return RedirectToAction("Login", "Account");
     }
-}
-
-public class LoginViewModel
-{
-    public string Email { get; set; }
-    public string Password { get; set; }
-    public bool RememberMe { get; set; }
 }

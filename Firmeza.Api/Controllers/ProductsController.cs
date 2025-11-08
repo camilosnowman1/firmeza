@@ -4,11 +4,15 @@ using Firmeza.Core.Entities;
 using Firmeza.Core.Interfaces;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using System.Collections.Generic;
+using System.Threading.Tasks;
 
 namespace Firmeza.Api.Controllers;
 
-[Route("api/[controller]")]
+[Authorize]
 [ApiController]
+[ApiVersion("1.0")] // Added API Version
+[Route("api/v{version:apiVersion}/[controller]")] // Updated Route
 public class ProductsController : ControllerBase
 {
     private readonly IProductRepository _productRepository;
@@ -20,64 +24,53 @@ public class ProductsController : ControllerBase
         _mapper = mapper;
     }
 
-    // GET: api/Products
+    // GET: api/v1/Products
     [HttpGet]
     public async Task<ActionResult<IEnumerable<ProductDto>>> GetProducts()
     {
         var products = await _productRepository.GetAllAsync();
-        var productDtos = _mapper.Map<IEnumerable<ProductDto>>(products);
-        return Ok(productDtos);
+        return Ok(_mapper.Map<IEnumerable<ProductDto>>(products));
     }
 
-    // GET: api/Products/5
+    // GET: api/v1/Products/5
     [HttpGet("{id}")]
     public async Task<ActionResult<ProductDto>> GetProduct(int id)
     {
         var product = await _productRepository.GetByIdAsync(id);
-
         if (product == null)
         {
             return NotFound();
         }
-
-        var productDto = _mapper.Map<ProductDto>(product);
-        return Ok(productDto);
+        return Ok(_mapper.Map<ProductDto>(product));
     }
 
-    // POST: api/Products
+    // POST: api/v1/Products
     [HttpPost]
-    [Authorize(Roles = "Admin")]
     public async Task<ActionResult<ProductDto>> PostProduct(CreateProductDto createProductDto)
     {
         var product = _mapper.Map<Product>(createProductDto);
-        
         await _productRepository.AddAsync(product);
-
-        var productDto = _mapper.Map<ProductDto>(product);
-
-        return CreatedAtAction(nameof(GetProduct), new { id = productDto.Id }, productDto);
+        return CreatedAtAction(nameof(GetProduct), new { id = product.Id, version = HttpContext.GetRequestedApiVersion()?.ToString() }, _mapper.Map<ProductDto>(product));
     }
 
-    // PUT: api/Products/5
+    // PUT: api/v1/Products/5
     [HttpPut("{id}")]
-    [Authorize(Roles = "Admin")]
     public async Task<IActionResult> PutProduct(int id, UpdateProductDto updateProductDto)
     {
-        var product = await _productRepository.GetByIdAsync(id);
-        if (product == null)
+        var existingProduct = await _productRepository.GetByIdAsync(id);
+        if (existingProduct == null)
         {
             return NotFound();
         }
 
-        _mapper.Map(updateProductDto, product);
-        await _productRepository.UpdateAsync(product);
+        _mapper.Map(updateProductDto, existingProduct);
+        await _productRepository.UpdateAsync(existingProduct);
 
         return NoContent();
     }
 
-    // DELETE: api/Products/5
+    // DELETE: api/v1/Products/5
     [HttpDelete("{id}")]
-    [Authorize(Roles = "Admin")]
     public async Task<IActionResult> DeleteProduct(int id)
     {
         var product = await _productRepository.GetByIdAsync(id);
@@ -87,7 +80,6 @@ public class ProductsController : ControllerBase
         }
 
         await _productRepository.DeleteAsync(id);
-
         return NoContent();
     }
 }

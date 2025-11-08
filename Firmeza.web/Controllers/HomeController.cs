@@ -1,7 +1,8 @@
 using System.Diagnostics;
-using Firmeza.Web.Data;
-using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Firmeza.Web.Models;
+using Firmeza.Infrastructure.Persistence;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.EntityFrameworkCore;
 
 namespace Firmeza.Web.Controllers;
@@ -9,33 +10,35 @@ namespace Firmeza.Web.Controllers;
 [Authorize(Roles = "Admin")]
 public class HomeController : Controller
 {
+    private readonly ILogger<HomeController> _logger;
     private readonly ApplicationDbContext _context;
 
-    public HomeController(ApplicationDbContext context)
+    public HomeController(ILogger<HomeController> logger, ApplicationDbContext context)
     {
+        _logger = logger;
         _context = context;
     }
 
     public async Task<IActionResult> Index()
     {
-        var viewModel = new DashboardViewModel
-        {
-            TotalProducts = await _context.Products.CountAsync(),
-            TotalCustomers = await _context.Users.CountAsync(), // Assuming customers are users for now
-            TotalSales = 0 // Placeholder, as Sales entity is not yet defined
-        };
-        return View(viewModel);
+        var now = DateTime.UtcNow;
+        
+        // Real database queries for dashboard
+        ViewData["TotalSales"] = await _context.Sales.CountAsync();
+        ViewData["TotalRevenue"] = await _context.Sales.SumAsync(s => s.TotalAmount);
+        ViewData["NewCustomers"] = await _context.Customers.CountAsync(c => c.CreatedAt >= now.AddDays(-30));
+        
+        return View();
     }
 
     public IActionResult Privacy()
     {
         return View();
     }
-}
 
-public class DashboardViewModel
-{
-    public int TotalProducts { get; set; }
-    public int TotalCustomers { get; set; }
-    public int TotalSales { get; set; }
+    [ResponseCache(Duration = 0, Location = ResponseCacheLocation.None, NoStore = true)]
+    public IActionResult Error()
+    {
+        return View(new ErrorViewModel { RequestId = Activity.Current?.Id ?? HttpContext.TraceIdentifier });
+    }
 }

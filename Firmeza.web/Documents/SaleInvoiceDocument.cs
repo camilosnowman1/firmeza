@@ -1,4 +1,4 @@
-using Firmeza.Web.Data.Entities;
+using Firmeza.Core.Entities; // Corrected namespace
 using QuestPDF.Fluent;
 using QuestPDF.Helpers;
 using QuestPDF.Infrastructure;
@@ -25,30 +25,25 @@ public class SaleInvoiceDocument : IDocument
 
                 page.Header().Element(ComposeHeader);
                 page.Content().Element(ComposeContent);
-
-                page.Footer().AlignCenter()
-                    .Text(x =>
-                    {
-                        x.Span("Page ");
-                        x.CurrentPageNumber();
-                    });
+                page.Footer().AlignCenter().Text(x =>
+                {
+                    x.CurrentPageNumber();
+                    x.Span(" / ");
+                    x.TotalPages();
+                });
             });
     }
 
     void ComposeHeader(IContainer container)
     {
-        var titleStyle = TextStyle.Default.FontSize(20).SemiBold().FontColor(Colors.Blue.Medium);
-
         container.Row(row =>
         {
             row.RelativeItem().Column(column =>
             {
-                column.Item().Text("FIRMEZA S.A.").Style(titleStyle);
-                column.Item().Text($"Invoice #{_sale.Id}");
+                column.Item().Text("Sale Invoice").SemiBold().FontSize(24);
+                column.Item().Text($"Invoice ID: {_sale.Id}");
                 column.Item().Text($"Date: {_sale.SaleDate:yyyy-MM-dd}");
             });
-
-            row.ConstantItem(150).AlignRight().Text("Receipt").FontSize(14);
         });
     }
 
@@ -56,26 +51,23 @@ public class SaleInvoiceDocument : IDocument
     {
         container.PaddingVertical(40).Column(column =>
         {
-            column.Item().Row(row =>
-            {
-                row.RelativeItem().Column(column =>
-                {
-                    column.Item().Text("Bill To:").SemiBold();
-                    column.Item().Text(_sale.Customer.FullName);
-                    column.Item().Text(_sale.Customer.Document);
-                    column.Item().Text(_sale.Customer.Email);
-                });
-            });
+            column.Spacing(20);
 
-            column.Item().PaddingTop(20).Element(ComposeTable);
+            column.Item().Text("Customer Details").SemiBold();
+            column.Item().Text($"Name: {_sale.Customer.FullName}");
+            column.Item().Text($"Document: {_sale.Customer.Document}");
+            column.Item().Text($"Email: {_sale.Customer.Email}");
 
-            var totalPrice = _sale.TotalAmount;
-            column.Item().AlignRight().PaddingTop(10).Text($"Grand Total: {totalPrice:C}", TextStyle.Default.SemiBold().FontSize(14));
+            column.Item().Element(ComposeTable);
+
+            column.Item().AlignRight().Text($"Total Amount: {_sale.TotalAmount:C}").SemiBold().FontSize(16);
         });
     }
 
     void ComposeTable(IContainer container)
     {
+        var headerStyle = TextStyle.Default.SemiBold();
+
         container.Table(table =>
         {
             table.ColumnsDefinition(columns =>
@@ -88,22 +80,18 @@ public class SaleInvoiceDocument : IDocument
 
             table.Header(header =>
             {
-                header.Cell().Element(CellStyle).Text("Product");
-                header.Cell().Element(CellStyle).AlignCenter().Text("Unit Price");
-                header.Cell().Element(CellStyle).AlignCenter().Text("Quantity");
-                header.Cell().Element(CellStyle).AlignRight().Text("Total");
-                
-                static IContainer CellStyle(IContainer container) => container.DefaultTextStyle(x => x.SemiBold()).PaddingVertical(5).BorderBottom(1).BorderColor(Colors.Grey.Lighten2);
+                header.Cell().Text("Product").Style(headerStyle);
+                header.Cell().AlignRight().Text("Unit Price").Style(headerStyle);
+                header.Cell().AlignRight().Text("Quantity").Style(headerStyle);
+                header.Cell().AlignRight().Text("Total").Style(headerStyle);
             });
 
             foreach (var item in _sale.SaleDetails)
             {
-                table.Cell().Element(CellStyle).Text(item.Product.Name);
-                table.Cell().Element(CellStyle).AlignCenter().Text($"{item.UnitPrice:C}");
-                table.Cell().Element(CellStyle).AlignCenter().Text(item.Quantity.ToString());
-                table.Cell().Element(CellStyle).AlignRight().Text($"{item.TotalPrice:C}");
-                
-                static IContainer CellStyle(IContainer container) => container.BorderBottom(1).BorderColor(Colors.Grey.Lighten2).PaddingVertical(5); 
+                table.Cell().Text(item.Product.Name);
+                table.Cell().AlignRight().Text(item.UnitPrice.ToString("C"));
+                table.Cell().AlignRight().Text(item.Quantity.ToString());
+                table.Cell().AlignRight().Text(item.TotalPrice.ToString("C"));
             }
         });
     }

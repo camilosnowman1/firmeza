@@ -1,56 +1,94 @@
-@model Firmeza.Web.Controllers.RentalViewModel
+@model Firmeza.Web.Models.RentalViewModel
+@using System.Text.Json;
 
-@{ ViewData["Title"] = "Create Rental"; }
-
-<h1>@ViewData["Title"]</h1>
-<hr />
-
-@if (TempData["ErrorMessage"] != null)
-{
-    <div class="alert alert-danger">@TempData["ErrorMessage"]</div>
+@{
+    ViewData["Title"] = "Create Rental";
+    var vehicleRatesJson = JsonSerializer.Serialize(Model.VehicleRates);
 }
 
-<div class="row">
-    <div class="col-md-6">
-        <form asp-action="Create">
-            <div asp-validation-summary="ModelOnly" class="text-danger"></div>
-            
-            <div class="form-group mb-3">
+<h2>Create a New Rental</h2>
+<hr />
+
+<form asp-action="Create">
+    <div class="row">
+        <div class="col-md-6">
+            <div class="form-group">
                 <label asp-for="CustomerId" class="control-label">Customer</label>
-                <select asp-for="CustomerId" class="form-control" asp-items="Model.Customers">
-                    <option value="">-- Select a Customer --</option>
-                </select>
+                <select asp-for="CustomerId" class="form-control" asp-items="Model.Customers"></select>
                 <span asp-validation-for="CustomerId" class="text-danger"></span>
             </div>
-
-            <div class="form-group mb-3">
+        </div>
+        <div class="col-md-6">
+            <div class="form-group">
                 <label asp-for="VehicleId" class="control-label">Vehicle</label>
-                <select asp-for="VehicleId" class="form-control" asp-items="Model.Vehicles">
-                    <option value="">-- Select a Vehicle --</option>
-                </select>
+                <select asp-for="VehicleId" id="vehicle-selector" class="form-control" asp-items="Model.Vehicles"></select>
                 <span asp-validation-for="VehicleId" class="text-danger"></span>
             </div>
-
-            <div class="form-group mb-3">
+        </div>
+    </div>
+    <div class="row mt-3">
+        <div class="col-md-6">
+            <div class="form-group">
                 <label asp-for="StartDate" class="control-label"></label>
-                <input asp-for="StartDate" type="datetime-local" class="form-control" />
+                <input asp-for="StartDate" id="start-date" class="form-control" />
                 <span asp-validation-for="StartDate" class="text-danger"></span>
             </div>
-
-            <div class="form-group mb-3">
+        </div>
+        <div class="col-md-6">
+            <div class="form-group">
                 <label asp-for="EndDate" class="control-label"></label>
-                <input asp-for="EndDate" type="datetime-local" class="form-control" />
+                <input asp-for="EndDate" id="end-date" class="form-control" />
                 <span asp-validation-for="EndDate" class="text-danger"></span>
             </div>
-
-            <div class="form-group mt-4">
-                <input type="submit" value="Create Rental" class="btn btn-primary" />
-                <a asp-action="Index" class="btn btn-secondary">Back to List</a>
-            </div>
-        </form>
+        </div>
     </div>
-</div>
+
+    <div class="row mt-3">
+        <div class="col-12">
+            <h4 class="text-end">Total: <span id="total-amount">$0.00</span></h4>
+        </div>
+    </div>
+
+    <div class="form-group mt-4">
+        <input type="submit" value="Create" class="btn btn-primary" />
+        <a asp-action="Index" class="btn btn-secondary">Back to List</a>
+    </div>
+</form>
 
 @section Scripts {
     @{await Html.RenderPartialAsync("_ValidationScriptsPartial");}
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            const vehicleRates = JSON.parse('@Html.Raw(vehicleRatesJson)');
+            const vehicleSelector = document.getElementById('vehicle-selector');
+            const startDateInput = document.getElementById('start-date');
+            const endDateInput = document.getElementById('end-date');
+            const totalAmountSpan = document.getElementById('total-amount');
+
+            function calculateTotal() {
+                const vehicleId = vehicleSelector.value;
+                const rate = vehicleRates[vehicleId] || 0;
+                
+                const startDate = new Date(startDateInput.value);
+                const endDate = new Date(endDateInput.value);
+
+                if (startDate >= endDate) {
+                    totalAmountSpan.textContent = '$0.00';
+                    return;
+                }
+
+                const hours = (endDate - startDate) / 1000 / 60 / 60;
+                const total = hours * rate;
+
+                totalAmountSpan.textContent = total.toLocaleString('es-CO', { style: 'currency', currency: 'COP' });
+            }
+
+            vehicleSelector.addEventListener('change', calculateTotal);
+            startDateInput.addEventListener('change', calculateTotal);
+            endDateInput.addEventListener('change', calculateTotal);
+
+            // Initial calculation on page load
+            calculateTotal();
+        });
+    </script>
 }

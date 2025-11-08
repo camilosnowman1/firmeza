@@ -22,6 +22,6 @@ public class SaleDetail
     [Column(TypeName = "decimal(18,2)")]
     public decimal UnitPrice { get; set; }
 
-    [NotMapped] // This property is calculated and should not be mapped to the database
-    public decimal TotalPrice => Quantity * UnitPrice;
+    [Column(TypeName = "decimal(18,2)")] // Ensure it's mapped to the database
+    public decimal TotalPrice { get; set; } // Make it settable
 }

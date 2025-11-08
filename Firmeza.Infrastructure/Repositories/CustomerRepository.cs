@@ -2,8 +2,6 @@ using Firmeza.Core.Entities;
 using Firmeza.Core.Interfaces;
 using Firmeza.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
-using System.Collections.Generic;
-using System.Threading.Tasks;
 
 namespace Firmeza.Infrastructure.Repositories;
 
@@ -21,6 +19,11 @@ public class CustomerRepository : ICustomerRepository
         return await _context.Customers.FindAsync(id);
     }
 
+    public IQueryable<Customer> GetAll()
+    {
+        return _context.Customers.AsQueryable();
+    }
+    
     public async Task<IEnumerable<Customer>> GetAllAsync()
     {
         return await _context.Customers.ToListAsync();

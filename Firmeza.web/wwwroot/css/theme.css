@@ -1,0 +1,65 @@
+/* Professional Christmas Theme */
+
+:root {
+    --festive-red: #D92525;
+    --pine-green: #0A7A43;
+    --gold-leaf: #F2B705;
+    --light-snow: #f8f9fa;
+}
+
+body {
+    /* Subtle, elegant snowflake background */
+    background-color: var(--light-snow);
+    background-image: 
+        url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='40' height='40' viewBox='0 0 40 40'%3E%3Cg fill-rule='evenodd'%3E%3Cg fill='%23d92525' fill-opacity='0.1'%3E%3Cpath d='M0 38.59l2.83-2.83 1.41 1.41L1.41 40H0v-1.41zM0 1.4l2.83 2.83 1.41-1.41L1.41 0H0v1.41zM38.59 40l-2.83-2.83 1.41-1.41L40 38.59V40h-1.41zM40 1.41l-2.83 2.83-1.41-1.41L38.59 0H40v1.41z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
+}
+
+/* Override Bootstrap colors */
+.bg-primary { background-color: var(--festive-red) !important; }
+.bg-success { background-color: var(--pine-green) !important; }
+.bg-warning { background-color: var(--gold-leaf) !important; }
+
+.btn-primary {
+    background-color: var(--festive-red);
+    border-color: var(--festive-red);
+    transition: all 0.3s ease;
+}
+.btn-primary:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+}
+
+.card {
+    transition: transform 0.2s ease-in-out;
+}
+.card:hover {
+    transform: scale(1.02);
+}
+
+/* Dashboard Card Icons */
+.dashboard-card-icon {
+    font-size: 3.5rem;
+    opacity: 0.7;
+    transition: transform 0.3s ease;
+}
+.card:hover .dashboard-card-icon {
+    transform: scale(1.2) rotate(10deg);
+    opacity: 1;
+}
+
+/* Pulsing animation for the revenue card */
+.card.bg-warning {
+    animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+    0% { box-shadow: 0 0 0 0 rgba(242, 183, 5, 0.7); }
+    70% { box-shadow: 0 0 0 10px rgba(242, 183, 5, 0); }
+    100% { box-shadow: 0 0 0 0 rgba(242, 183, 5, 0); }
+}
+
+/* Navbar styling */
+.navbar-brand {
+    font-weight: 600;
+    font-size: 1.5rem;
+}

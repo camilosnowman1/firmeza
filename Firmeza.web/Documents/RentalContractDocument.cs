@@ -1,4 +1,4 @@
-using Firmeza.Web.Data.Entities;
+using Firmeza.Core.Entities; // Corrected namespace
 using QuestPDF.Fluent;
 using QuestPDF.Helpers;
 using QuestPDF.Infrastructure;
@@ -25,30 +25,25 @@ public class RentalContractDocument : IDocument
 
                 page.Header().Element(ComposeHeader);
                 page.Content().Element(ComposeContent);
-
-                page.Footer().AlignCenter()
-                    .Text(x =>
-                    {
-                        x.Span("Page ");
-                        x.CurrentPageNumber();
-                    });
+                page.Footer().AlignCenter().Text(x =>
+                {
+                    x.CurrentPageNumber();
+                    x.Span(" / ");
+                    x.TotalPages();
+                });
             });
     }
 
     void ComposeHeader(IContainer container)
     {
-        var titleStyle = TextStyle.Default.FontSize(20).SemiBold().FontColor(Colors.Blue.Medium);
-
         container.Row(row =>
         {
             row.RelativeItem().Column(column =>
             {
-                column.Item().Text("FIRMEZA S.A. - Rental Contract").Style(titleStyle);
-                column.Item().Text($"Contract #{_rental.Id}");
+                column.Item().Text("Rental Contract").SemiBold().FontSize(24);
+                column.Item().Text($"Contract ID: {_rental.Id}");
                 column.Item().Text($"Date: {_rental.CreatedAt:yyyy-MM-dd}");
             });
-
-            row.ConstantItem(150).AlignRight().Text("Rental Agreement").FontSize(14);
         });
     }
 
@@ -56,57 +51,22 @@ public class RentalContractDocument : IDocument
     {
         container.PaddingVertical(40).Column(column =>
         {
-            column.Item().Row(row =>
-            {
-                row.RelativeItem().Column(column =>
-                {
-                    column.Item().Text("Rented To:").SemiBold();
-                    column.Item().Text(_rental.Customer.FullName);
-                    column.Item().Text(_rental.Customer.Document);
-                    column.Item().Text(_rental.Customer.Email);
-                });
-            });
+            column.Spacing(20);
 
-            column.Item().PaddingTop(20).Element(ComposeRentalDetails);
+            column.Item().Text("Customer Details").SemiBold();
+            column.Item().Text($"Name: {_rental.Customer.FullName}");
+            column.Item().Text($"Document: {_rental.Customer.Document}");
+            column.Item().Text($"Email: {_rental.Customer.Email}");
 
-            column.Item().PaddingTop(20).Text("Terms and Conditions:").SemiBold();
-            column.Item().Text("1. The vehicle must be returned in the same condition as received.");
-            column.Item().Text("2. Any damage will be charged to the customer.");
-            column.Item().Text("3. Late returns will incur additional charges.");
+            column.Item().Text("Vehicle Details").SemiBold();
+            column.Item().Text($"Vehicle: {_rental.Vehicle.Name}");
+            column.Item().Text($"Hourly Rate: {_rental.Vehicle.HourlyRate:C}");
 
-            var totalAmount = _rental.TotalAmount;
-            column.Item().AlignRight().PaddingTop(20).Text($"Total Amount: {totalAmount:C}", TextStyle.Default.SemiBold().FontSize(14));
-        });
-    }
+            column.Item().Text("Rental Period").SemiBold();
+            column.Item().Text($"Start Date: {_rental.StartDate:yyyy-MM-dd HH:mm}");
+            column.Item().Text($"End Date: {_rental.EndDate:yyyy-MM-dd HH:mm}");
 
-    void ComposeRentalDetails(IContainer container)
-    {
-        container.Table(table =>
-        {
-            table.ColumnsDefinition(columns =>
-            {
-                columns.RelativeColumn(3);
-                columns.RelativeColumn();
-                columns.RelativeColumn();
-                columns.RelativeColumn();
-            });
-
-            table.Header(header =>
-            {
-                header.Cell().Element(CellStyle).Text("Vehicle");
-                header.Cell().Element(CellStyle).AlignCenter().Text("Hourly Rate");
-                header.Cell().Element(CellStyle).AlignCenter().Text("Start Date");
-                header.Cell().Element(CellStyle).AlignRight().Text("End Date");
-                
-                static IContainer CellStyle(IContainer container) => container.DefaultTextStyle(x => x.SemiBold()).PaddingVertical(5).BorderBottom(1).BorderColor(Colors.Grey.Lighten2);
-            });
-
-            table.Cell().Element(CellStyle).Text(_rental.Vehicle.Name);
-            table.Cell().Element(CellStyle).AlignCenter().Text($"{_rental.Vehicle.HourlyRate:C}");
-            table.Cell().Element(CellStyle).AlignCenter().Text($"{_rental.StartDate:yyyy-MM-dd HH:mm}");
-            table.Cell().Element(CellStyle).AlignRight().Text($"{_rental.EndDate:yyyy-MM-dd HH:mm}");
-            
-            static IContainer CellStyle(IContainer container) => container.BorderBottom(1).BorderColor(Colors.Grey.Lighten2).PaddingVertical(5); 
+            column.Item().AlignRight().Text($"Total Amount: {_rental.TotalAmount:C}").SemiBold().FontSize(16);
         });
     }
 }

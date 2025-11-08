@@ -27,5 +27,12 @@ public class MappingProfile : Profile
         CreateMap<CreateSaleDetailDto, SaleDetail>();
         CreateMap<UpdateSaleDto, Sale>();
         CreateMap<UpdateSaleDetailDto, SaleDetail>();
+        
+        // Rental Mappings
+        CreateMap<Rental, RentalDto>()
+            .ForMember(dest => dest.CustomerFullName, opt => opt.MapFrom(src => src.Customer.FullName))
+            .ForMember(dest => dest.VehicleName, opt => opt.MapFrom(src => src.Vehicle.Name));
+        CreateMap<CreateRentalDto, Rental>();
+        CreateMap<UpdateRentalDto, Rental>();
     }
 }

@@ -1,14 +1,17 @@
-@model Firmeza.Web.Data.Entities.Vehicle
+@model Firmeza.Core.Entities.Vehicle
 
-@{ ViewData["Title"] = "Create Vehicle"; }
+@{
+    ViewData["Title"] = "Create Vehicle";
+}
 
-<h1>@ViewData["Title"]</h1>
-
+<h2>Create Vehicle</h2>
 <hr />
+
 <div class="row">
-    <div class="col-md-4">
+    <div class="col-md-7">
         <form asp-action="Create">
             <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+            
             <div class="form-group mb-3">
                 <label asp-for="Name" class="control-label"></label>
                 <input asp-for="Name" class="form-control" />
@@ -21,17 +24,76 @@
             </div>
             <div class="form-group mb-3">
                 <label asp-for="HourlyRate" class="control-label"></label>
-                <input asp-for="HourlyRate" class="form-control" />
+                <input asp-for="HourlyRate" id="hourly-rate" class="form-control" />
                 <span asp-validation-for="HourlyRate" class="text-danger"></span>
             </div>
-            <div class="form-group">
+            
+            <div class="form-group mt-4">
                 <input type="submit" value="Create" class="btn btn-primary" />
                 <a asp-action="Index" class="btn btn-secondary">Back to List</a>
             </div>
         </form>
     </div>
+    
+    <!-- Dynamic Calculation Section -->
+    <div class="col-md-5">
+        <div class="card p-3 bg-light">
+            <h4>Cost Estimator</h4>
+            <hr>
+            <div class="form-group mb-3">
+                <label for="rental-duration-type" class="control-label">Rental Duration Type</label>
+                <select id="rental-duration-type" class="form-control">
+                    <option value="Hours">Hours</option>
+                    <option value="Days">Days</option>
+                </select>
+            </div>
+            <div class="form-group mb-3">
+                <label for="quantity" class="control-label">Quantity</label>
+                <input type="number" id="quantity" class="form-control" value="1" min="1" />
+            </div>
+            <h5 class="text-end mt-3">Total Estimated Cost: <span id="total-cost" class="fw-bold">$0</span></h5>
+        </div>
+    </div>
 </div>
+
 
 @section Scripts {
     @{await Html.RenderPartialAsync("_ValidationScriptsPartial");}
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            // Get references to the elements
+            const hourlyRateInput = document.getElementById('hourly-rate');
+            const durationTypeSelect = document.getElementById('rental-duration-type');
+            const quantityInput = document.getElementById('quantity');
+            const totalCostSpan = document.getElementById('total-cost');
+
+            // The calculation function
+            function calculateTotal() {
+                const hourlyRate = parseFloat(hourlyRateInput.value) || 0;
+                const durationType = durationTypeSelect.value;
+                const quantity = parseInt(quantityInput.value) || 0;
+
+                let total = 0;
+
+                if (hourlyRate > 0 && quantity > 0) {
+                    if (durationType === 'Hours') {
+                        total = hourlyRate * quantity;
+                    } else if (durationType === 'Days') {
+                        total = hourlyRate * quantity * 24; // Using the 24-hour factor
+                    }
+                }
+                
+                // Format as Colombian Pesos and display
+                totalCostSpan.textContent = total.toLocaleString('es-CO', { style: 'currency', currency: 'COP', minimumFractionDigits: 0 });
+            }
+
+            // Attach event listeners to all three input fields
+            hourlyRateInput.addEventListener('input', calculateTotal);
+            durationTypeSelect.addEventListener('change', calculateTotal);
+            quantityInput.addEventListener('input', calculateTotal);
+
+            // Perform an initial calculation when the page loads
+            calculateTotal();
+        });
+    </script>
 }

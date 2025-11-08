@@ -1,5 +1,7 @@
-using Firmeza.Web.Data.Entities;
+using Firmeza.Core.Entities; // Corrected namespace
+using Firmeza.Infrastructure.Persistence; // Corrected namespace
 using Microsoft.AspNetCore.Identity;
+using Microsoft.EntityFrameworkCore;
 
 namespace Firmeza.Web.Data;
 
@@ -18,43 +20,44 @@ public class SeedDb
 
     public async Task SeedAsync()
     {
-        await _context.Database.EnsureCreatedAsync();
-        
-        // 1. Create roles
-        await CheckRolesAsync();
-        
-        // 2. Create a default admin user
-        await CheckUsersAsync();
-    }
+        await _context.Database.MigrateAsync();
 
-    private async Task CheckRolesAsync()
-    {
-        if (!await _roleManager.RoleExistsAsync("Admin"))
-        {
-            await _roleManager.CreateAsync(new IdentityRole("Admin"));
-        }
+        // Create roles
+        await CheckRoleAsync("Admin");
+        await CheckRoleAsync("Cliente");
 
-        if (!await _roleManager.RoleExistsAsync("Customer"))
+        // Create admin user
+        await CheckUserAsync("admin@firmeza.dev", "Admin");
+
+        // Create products if they don't exist
+        if (!_context.Products.Any())
         {
-            await _roleManager.CreateAsync(new IdentityRole("Customer"));
+            _context.Products.Add(new Product { Name = "Cement", Price = 10.50m });
+            _context.Products.Add(new Product { Name = "Sand Bag", Price = 5.25m });
+            _context.Products.Add(new Product { Name = "Bricks (x100)", Price = 25.00m });
+            await _context.SaveChangesAsync();
         }
     }
 
-    private async Task CheckUsersAsync()
+    private async Task CheckRoleAsync(string roleName)
     {
-        // Create Admin user
-        var adminUser = await _userManager.FindByEmailAsync("admin@firmeza.dev");
-        if (adminUser == null)
-        { 
-            adminUser = new ApplicationUser
-            {
-                UserName = "admin@firmeza.dev",
-                Email = "admin@firmeza.dev",
-            };
-            var result = await _userManager.CreateAsync(adminUser, "Admin123!");
+        var roleExists = await _roleManager.RoleExistsAsync(roleName);
+        if (!roleExists)
+        {
+            await _roleManager.CreateAsync(new IdentityRole(roleName));
+        }
+    }
+
+    private async Task CheckUserAsync(string email, string role)
+    {
+        var user = await _userManager.FindByEmailAsync(email);
+        if (user == null)
+        {
+            user = new ApplicationUser { UserName = email, Email = email };
+            var result = await _userManager.CreateAsync(user, "Admin123!");
             if (result.Succeeded)
             {
-                await _userManager.AddToRoleAsync(adminUser, "Admin");
+                await _userManager.AddToRoleAsync(user, role);
             }
         }
     }

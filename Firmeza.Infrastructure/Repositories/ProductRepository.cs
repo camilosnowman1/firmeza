@@ -3,6 +3,7 @@ using Firmeza.Core.Interfaces;
 using Firmeza.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading.Tasks;
 
 namespace Firmeza.Infrastructure.Repositories;
@@ -21,6 +22,11 @@ public class ProductRepository : IProductRepository
         return await _context.Products.FindAsync(id);
     }
 
+    public IQueryable<Product> GetAll()
+    {
+        return _context.Products.AsQueryable();
+    }
+    
     public async Task<IEnumerable<Product>> GetAllAsync()
     {
         return await _context.Products.ToListAsync();

@@ -1,45 +1,38 @@
-using Firmeza.Web.Data;
-using Firmeza.Web.Data.Entities;
+using Firmeza.Core.Entities;
 using Firmeza.Web.Helpers;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using OfficeOpenXml;
 
 namespace Firmeza.Web.Controllers;
 
 [Authorize(Roles = "Admin")]
 public class VehiclesController : Controller
 {
-    private readonly ApplicationDbContext _context;
+    private readonly Infrastructure.Persistence.ApplicationDbContext _context;
 
-    public VehiclesController(ApplicationDbContext context)
+    public VehiclesController(Infrastructure.Persistence.ApplicationDbContext context)
     {
         _context = context;
     }
 
-    // GET: Vehicles
     public async Task<IActionResult> Index(string searchString, int? pageNumber)
     {
         ViewData["CurrentFilter"] = searchString;
-
-        var vehicles = from v in _context.Vehicles.AsNoTracking() select v;
+        var vehicles = from v in _context.Vehicles select v;
 
         if (!string.IsNullOrEmpty(searchString))
         {
-            vehicles = vehicles.Where(v => v.Name.Contains(searchString) || v.Description.Contains(searchString));
+            vehicles = vehicles.Where(s => s.Name.Contains(searchString));
         }
 
         int pageSize = 10;
         return View(await PaginatedList<Vehicle>.CreateAsync(vehicles.OrderBy(v => v.Name), pageNumber ?? 1, pageSize));
     }
 
-    // GET: Vehicles/Create
-    public IActionResult Create()
-    {
-        return View();
-    }
+    public IActionResult Create() => View();
 
-    // POST: Vehicles/Create
     [HttpPost]
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> Create(Vehicle vehicle)
@@ -53,86 +46,58 @@ public class VehiclesController : Controller
         return View(vehicle);
     }
 
-    // GET: Vehicles/Edit/5
     public async Task<IActionResult> Edit(int? id)
     {
-        if (id == null)
-        {
-            return NotFound();
-        }
-
-        var vehicle = await _context.Vehicles.FindAsync(id);
-        if (vehicle == null)
-        {
-            return NotFound();
-        }
+        if (id == null) return NotFound();
+        var vehicle = await _context.Vehicles.FirstOrDefaultAsync(m => m.Id == id);
+        if (vehicle == null) return NotFound();
         return View(vehicle);
     }
 
-    // POST: Vehicles/Edit/5
     [HttpPost]
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> Edit(int id, Vehicle vehicle)
     {
-        if (id != vehicle.Id)
-        {
-            return NotFound();
-        }
-
+        if (id != vehicle.Id) return NotFound();
         if (ModelState.IsValid)
         {
-            try
-            {
-                _context.Update(vehicle);
-                await _context.SaveChangesAsync();
-            }
-            catch (DbUpdateConcurrencyException)
-            {
-                if (!VehicleExists(vehicle.Id))
-                {
-                    return NotFound();
-                }
-                else
-                {
-                    throw;
-                }
-            }
+            _context.Update(vehicle);
+            await _context.SaveChangesAsync();
             return RedirectToAction(nameof(Index));
         }
         return View(vehicle);
     }
 
-    // GET: Vehicles/Delete/5
     public async Task<IActionResult> Delete(int? id)
     {
-        if (id == null)
-        {
-            return NotFound();
-        }
-
-        var vehicle = await _context.Vehicles
-            .FirstOrDefaultAsync(m => m.Id == id);
-        if (vehicle == null)
-        {
-            return NotFound();
-        }
-
+        if (id == null) return NotFound();
+        var vehicle = await _context.Vehicles.FirstOrDefaultAsync(m => m.Id == id);
+        if (vehicle == null) return NotFound();
         return View(vehicle);
     }
 
-    // POST: Vehicles/Delete/5
     [HttpPost, ActionName("Delete")]
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> DeleteConfirmed(int id)
     {
         var vehicle = await _context.Vehicles.FindAsync(id);
-        _context.Vehicles.Remove(vehicle);
+        if (vehicle != null) _context.Vehicles.Remove(vehicle);
         await _context.SaveChangesAsync();
         return RedirectToAction(nameof(Index));
     }
-
-    private bool VehicleExists(int id)
+    
+    public async Task<IActionResult> ExportToExcel()
     {
-        return _context.Vehicles.Any(e => e.Id == id);
+        var vehicles = await _context.Vehicles.OrderBy(v => v.Name).ToListAsync();
+        using var package = new ExcelPackage();
+        var worksheet = package.Workbook.Worksheets.Add("Vehicles");
+        worksheet.Cells.LoadFromCollection(vehicles, true);
+        
+        var stream = new MemoryStream();
+        await package.SaveAsAsync(stream);
+        stream.Position = 0;
+        
+        var excelName = $"Vehicles-{DateTime.Now:yyyyMMddHHmmss}.xlsx";
+        return File(stream, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", excelName);
     }
 }

@@ -5,7 +5,6 @@ EXPOSE 8080
 EXPOSE 8081
 
 # Install common native dependencies for graphics/fonts (SkiaSharp, HarfBuzzSharp)
-# This is crucial for QuestPDF to work in Linux containers
 RUN apt-get update && apt-get install -y --no-install-recommends \
     libgdiplus \
     fontconfig \
@@ -16,17 +15,20 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 FROM mcr.microsoft.com/dotnet/sdk:8.0 AS build
 WORKDIR /src
 
-# Copy solution and project files first to leverage Docker layer caching
+# Copy all .csproj files and the .sln file
 COPY ["Firmeza.sln", "./"]
 COPY ["Firmeza.web/Firmeza.web.csproj", "Firmeza.web/"]
+COPY ["Firmeza.Api/Firmeza.Api.csproj", "Firmeza.Api/"]
+COPY ["Firmeza.Core/Firmeza.Core.csproj", "Firmeza.Core/"]
+COPY ["Firmeza.Infrastructure/Firmeza.Infrastructure.csproj", "Firmeza.Infrastructure/"]
 
-# Restore dependencies
+# Restore dependencies for the entire solution
 RUN dotnet restore "Firmeza.sln"
 
 # Copy the rest of the source code
 COPY . .
 
-# Build the project
+# Build the project (specify the project to build)
 WORKDIR "/src/Firmeza.web"
 RUN dotnet build "Firmeza.web.csproj" -c Release -o /app/build
 

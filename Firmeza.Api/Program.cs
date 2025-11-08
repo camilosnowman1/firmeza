@@ -3,11 +3,15 @@ using Firmeza.Core.Entities;
 using Firmeza.Core.Interfaces;
 using Firmeza.Infrastructure.Persistence;
 using Firmeza.Infrastructure.Repositories;
+using Firmeza.Infrastructure.Services;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc.ApiExplorer;
+using Microsoft.AspNetCore.Mvc.Versioning; // Added this missing using
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -39,22 +43,52 @@ builder.Services.AddAuthentication(options =>
     };
 });
 
+// Register Repositories and Services
 builder.Services.AddScoped<IProductRepository, ProductRepository>();
 builder.Services.AddScoped<ICustomerRepository, CustomerRepository>();
-builder.Services.AddScoped<ISaleRepository, SaleRepository>(); // Register ISaleRepository
+builder.Services.AddScoped<ISaleRepository, SaleRepository>();
+builder.Services.AddScoped<IRentalRepository, RentalRepository>();
+builder.Services.AddScoped<IVehicleRepository, VehicleRepository>();
+builder.Services.AddTransient<IEmailService, SmtpEmailService>();
 
 builder.Services.AddAutoMapper(typeof(Program));
 
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 
-// --- Updated Swagger Configuration ---
-builder.Services.AddSwaggerGen(c =>
+// --- API Versioning Configuration ---
+builder.Services.AddApiVersioning(options =>
 {
-    c.SwaggerDoc("v1", new OpenApiInfo { Title = "Firmeza API", Version = "v1" });
+    options.DefaultApiVersion = new ApiVersion(1, 0);
+    options.AssumeDefaultVersionWhenUnspecified = true;
+    options.ReportApiVersions = true;
+    options.ApiVersionReader = ApiVersionReader.Combine(
+        new UrlSegmentApiVersionReader(),
+        new HeaderApiVersionReader("x-api-version")
+    );
+});
 
-    // Define the BearerAuth security scheme
-    c.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
+builder.Services.AddVersionedApiExplorer(options =>
+{
+    options.GroupNameFormat = "'v'VVV";
+    options.SubstituteApiVersionInUrl = true;
+});
+
+// --- Updated Swagger Configuration for Versioning ---
+builder.Services.AddSwaggerGen(options =>
+{
+    var provider = builder.Services.BuildServiceProvider().GetRequiredService<IApiVersionDescriptionProvider>();
+    foreach (var description in provider.ApiVersionDescriptions)
+    {
+        options.SwaggerDoc(description.GroupName, new OpenApiInfo
+        {
+            Title = $"Firmeza API {description.ApiVersion}",
+            Version = description.ApiVersion.ToString(),
+            Description = description.IsDeprecated ? "This API version has been deprecated." : "Firmeza API"
+        });
+    }
+
+    options.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
     {
         Description = "JWT Authorization header using the Bearer scheme. Example: \"Bearer {token}\"",
         Name = "Authorization",
@@ -63,8 +97,7 @@ builder.Services.AddSwaggerGen(c =>
         Scheme = "Bearer"
     });
 
-    // Make sure Swagger UI requires a Bearer token to access your controllers
-    c.AddSecurityRequirement(new OpenApiSecurityRequirement()
+    options.AddSecurityRequirement(new OpenApiSecurityRequirement()
     {
         {
             new OpenApiSecurityScheme
@@ -89,10 +122,15 @@ var app = builder.Build();
 if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();
-    app.UseSwaggerUI();
+    var provider = app.Services.GetRequiredService<IApiVersionDescriptionProvider>();
+    app.UseSwaggerUI(options =>
+    {
+        foreach (var description in provider.ApiVersionDescriptions)
+        {
+            options.SwaggerEndpoint($"/swagger/{description.GroupName}/swagger.json", description.GroupName.ToUpperInvariant());
+        }
+    });
 }
-
-// app.UseHttpsRedirection(); // Disable for development with Docker
 
 app.UseAuthentication();
 app.UseAuthorization();

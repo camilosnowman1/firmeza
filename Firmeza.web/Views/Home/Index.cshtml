@@ -1,45 +1,49 @@
-﻿@model Firmeza.Web.Controllers.DashboardViewModel
-@{ ViewData["Title"] = "Dashboard"; }
+﻿@{
+    ViewData["Title"] = "Dashboard";
+}
 
 <div class="container-fluid">
     <h1 class="mt-4">@ViewData["Title"]</h1>
     <hr />
     <div class="row">
-        <div class="col-xl-4 col-md-6">
-            <div class="card bg-primary text-white mb-4">
-                <div class="card-body">
-                    <div class="d-flex justify-content-between align-items-center">
-                        <div class="me-3">
-                            <div class="text-white-75 small">Total de Productos</div>
-                            <div class="text-lg fw-bold">@Model.TotalProducts</div>
-                        </div>
-                        <i class="bi bi-box-seam-fill" style="font-size: 3rem;"></i>
-                    </div>
-                </div>
-            </div>
-        </div>
-        <div class="col-xl-4 col-md-6">
-            <div class="card bg-warning text-white mb-4">
-                <div class="card-body">
-                    <div class="d-flex justify-content-between align-items-center">
-                        <div class="me-3">
-                            <div class="text-white-75 small">Total de Clientes</div>
-                            <div class="text-lg fw-bold">@Model.TotalCustomers</div>
-                        </div>
-                        <i class="bi bi-people-fill" style="font-size: 3rem;"></i>
-                    </div>
-                </div>
-            </div>
-        </div>
-        <div class="col-xl-4 col-md-6">
-            <div class="card bg-success text-white mb-4">
+        <!-- Total Sales Card -->
+        <div class="col-xl-4 col-md-6 mb-4">
+            <div class="card bg-primary text-white h-100">
                 <div class="card-body">
                     <div class="d-flex justify-content-between align-items-center">
                         <div class="me-3">
                             <div class="text-white-75 small">Total de Ventas</div>
-                            <div class="text-lg fw-bold">@Model.TotalSales</div>
+                            <div class="text-lg fw-bold">@ViewData["TotalSales"]</div>
                         </div>
-                        <i class="bi bi-cart-check-fill" style="font-size: 3rem;"></i>
+                        <span class="dashboard-card-icon">🎁</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <!-- Total Revenue Card -->
+        <div class="col-xl-4 col-md-6 mb-4">
+            <div class="card bg-warning text-white h-100">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div class="me-3">
+                            <div class="text-white-75 small">Ingresos Totales</div>
+                            <div class="text-lg fw-bold">@Convert.ToDecimal(ViewData["TotalRevenue"]).ToString("C0")</div>
+                        </div>
+                        <span class="dashboard-card-icon">💰</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <!-- New Customers Card -->
+        <div class="col-xl-4 col-md-6 mb-4">
+            <div class="card bg-success text-white h-100">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div class="me-3">
+                            <div class="text-white-75 small">Nuevos Clientes (Últ. 30 días)</div>
+                            <div class="text-lg fw-bold">@ViewData["NewCustomers"]</div>
+                        </div>
+                        <span class="dashboard-card-icon">🎅</span>
                     </div>
                 </div>
             </div>

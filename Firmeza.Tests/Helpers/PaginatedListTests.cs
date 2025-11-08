@@ -1,108 +1,111 @@
+using NUnit.Framework;
 using Firmeza.Web.Helpers;
-using Xunit;
 using System.Linq;
 using System.Collections.Generic;
 using System.Threading.Tasks;
-using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore; // Needed for AsQueryable and async EF methods
 
 namespace Firmeza.Tests.Helpers;
 
+[TestFixture]
 public class PaginatedListTests
 {
-    [Fact]
-    public async Task CreateAsync_ShouldReturnCorrectPageAndTotalPages()
+    private List<int> _sourceList;
+
+    [SetUp]
+    public void Setup()
     {
-        // Arrange
-        var items = new List<int> { 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15 };
-        var queryableItems = items.AsQueryable();
-        int pageIndex = 2;
-        int pageSize = 5;
-
-        // Act
-        var paginatedList = await PaginatedList<int>.CreateAsync(queryableItems, pageIndex, pageSize);
-
-        // Assert
-        Assert.Equal(pageIndex, paginatedList.PageIndex);
-        Assert.Equal(3, paginatedList.TotalPages); // 15 items / 5 per page = 3 pages
-        Assert.Equal(5, paginatedList.Count); // Should contain 5 items on the second page
-        Assert.Equal(6, paginatedList[0]); // First item on second page should be 6
+        _sourceList = Enumerable.Range(1, 100).ToList();
     }
 
-    [Fact]
-    public async Task CreateAsync_ShouldHandleFirstPageCorrectly()
+    [Test]
+    public async Task CreateAsync_ShouldReturnCorrectPage()
     {
         // Arrange
-        var items = new List<int> { 1, 2, 3, 4, 5, 6, 7, 8, 9, 10 };
-        var queryableItems = items.AsQueryable();
-        int pageIndex = 1;
-        int pageSize = 5;
+        var pageSize = 10;
+        var pageIndex = 3; // Requesting the 3rd page
 
         // Act
-        var paginatedList = await PaginatedList<int>.CreateAsync(queryableItems, pageIndex, pageSize);
+        var paginatedList = await PaginatedList<int>.CreateAsync(_sourceList.AsQueryable(), pageIndex, pageSize);
 
         // Assert
-        Assert.True(paginatedList.HasNextPage);
-        Assert.False(paginatedList.HasPreviousPage);
-        Assert.Equal(2, paginatedList.TotalPages);
-        Assert.Equal(5, paginatedList.Count);
-        Assert.Equal(1, paginatedList[0]);
+        Assert.IsNotNull(paginatedList);
+        Assert.AreEqual(pageIndex, paginatedList.PageIndex);
+        Assert.AreEqual(10, paginatedList.Count); // Should contain 10 items
+        Assert.AreEqual(21, paginatedList[0]); // First item on 3rd page (0-indexed skip)
+        Assert.AreEqual(10, paginatedList.TotalPages);
     }
 
-    [Fact]
-    public async Task CreateAsync_ShouldHandleLastPageCorrectly()
+    [Test]
+    public async Task CreateAsync_ShouldHandleFirstPage()
     {
         // Arrange
-        var items = new List<int> { 1, 2, 3, 4, 5, 6, 7, 8, 9, 10 };
-        var queryableItems = items.AsQueryable();
-        int pageIndex = 2;
-        int pageSize = 5;
+        var pageSize = 10;
+        var pageIndex = 1;
 
         // Act
-        var paginatedList = await PaginatedList<int>.CreateAsync(queryableItems, pageIndex, pageSize);
+        var paginatedList = await PaginatedList<int>.CreateAsync(_sourceList.AsQueryable(), pageIndex, pageSize);
 
         // Assert
-        Assert.False(paginatedList.HasNextPage);
-        Assert.True(paginatedList.HasPreviousPage);
-        Assert.Equal(2, paginatedList.TotalPages);
-        Assert.Equal(5, paginatedList.Count);
-        Assert.Equal(6, paginatedList[0]);
+        Assert.IsNotNull(paginatedList);
+        Assert.AreEqual(pageIndex, paginatedList.PageIndex);
+        Assert.AreEqual(10, paginatedList.Count);
+        Assert.AreEqual(1, paginatedList[0]);
+        Assert.IsTrue(paginatedList.HasNextPage);
+        Assert.IsFalse(paginatedList.HasPreviousPage);
     }
 
-    [Fact]
-    public async Task CreateAsync_ShouldHandleSinglePageCorrectly()
+    [Test]
+    public async Task CreateAsync_ShouldHandleLastPage()
     {
         // Arrange
-        var items = new List<int> { 1, 2, 3 };
-        var queryableItems = items.AsQueryable();
-        int pageIndex = 1;
-        int pageSize = 5;
+        var pageSize = 10;
+        var pageIndex = 10; // Last page
 
         // Act
-        var paginatedList = await PaginatedList<int>.CreateAsync(queryableItems, pageIndex, pageSize);
+        var paginatedList = await PaginatedList<int>.CreateAsync(_sourceList.AsQueryable(), pageIndex, pageSize);
 
         // Assert
-        Assert.False(paginatedList.HasNextPage);
-        Assert.False(paginatedList.HasPreviousPage);
-        Assert.Equal(1, paginatedList.TotalPages);
-        Assert.Equal(3, paginatedList.Count);
+        Assert.IsNotNull(paginatedList);
+        Assert.AreEqual(pageIndex, paginatedList.PageIndex);
+        Assert.AreEqual(10, paginatedList.Count);
+        Assert.AreEqual(91, paginatedList[0]); // First item on last page
+        Assert.IsFalse(paginatedList.HasNextPage);
+        Assert.IsTrue(paginatedList.HasPreviousPage);
     }
 
-    [Fact]
-    public async Task CreateAsync_ShouldHandleEmptyListCorrectly()
+    [Test]
+    public async Task CreateAsync_ShouldHandleEmptySource()
     {
         // Arrange
-        var items = new List<int>();
-        var queryableItems = items.AsQueryable();
-        int pageIndex = 1;
-        int pageSize = 5;
+        var emptyList = new List<int>().AsQueryable();
+        var pageSize = 10;
+        var pageIndex = 1;
 
         // Act
-        var paginatedList = await PaginatedList<int>.CreateAsync(queryableItems, pageIndex, pageSize);
+        var paginatedList = await PaginatedList<int>.CreateAsync(emptyList, pageIndex, pageSize);
 
         // Assert
-        Assert.False(paginatedList.HasNextPage);
-        Assert.False(paginatedList.HasPreviousPage);
-        Assert.Equal(0, paginatedList.TotalPages);
-        Assert.Equal(0, paginatedList.Count);
+        Assert.IsNotNull(paginatedList);
+        Assert.AreEqual(0, paginatedList.Count);
+        Assert.AreEqual(0, paginatedList.TotalPages);
+        Assert.IsFalse(paginatedList.HasNextPage);
+        Assert.IsFalse(paginatedList.HasPreviousPage);
+    }
+
+    [Test]
+    public async Task CreateAsync_ShouldHandlePageOutOfRange()
+    {
+        // Arrange
+        var pageSize = 10;
+        var pageIndex = 15; // Page beyond total pages
+
+        // Act
+        var paginatedList = await PaginatedList<int>.CreateAsync(_sourceList.AsQueryable(), pageIndex, pageSize);
+
+        // Assert
+        Assert.IsNotNull(paginatedList);
+        Assert.AreEqual(10, paginatedList.TotalPages); // Still 10 total pages
+        Assert.AreEqual(0, paginatedList.Count); // No items on this page
     }
 }

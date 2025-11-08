@@ -1,145 +1,93 @@
-using Firmeza.Web.Data;
-using Firmeza.Web.Data.Entities;
+using Firmeza.Core.Entities;
+using Firmeza.Core.Interfaces;
 using Firmeza.Web.Documents;
+using Firmeza.Web.Models;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
 using QuestPDF.Fluent;
-using System;
-using System.Collections.Generic;
-using System.IO;
-using System.Linq;
-using System.Threading.Tasks;
 
 namespace Firmeza.Web.Controllers;
-
-// ViewModel for the Create Sale view
-public class SaleViewModel
-{
-    public int CustomerId { get; set; }
-    public List<SelectListItem> Customers { get; set; } = new List<SelectListItem>();
-    public List<SelectListItem> Products { get; set; } = new List<SelectListItem>();
-    public List<SaleDetailViewModel> Items { get; set; } = new List<SaleDetailViewModel>();
-}
-
-public class SaleDetailViewModel
-{
-    public int ProductId { get; set; }
-    public int Quantity { get; set; }
-}
 
 [Authorize(Roles = "Admin")]
 public class SalesController : Controller
 {
-    private readonly ApplicationDbContext _context;
-    private readonly IWebHostEnvironment _webHostEnvironment;
+    private readonly ISaleRepository _saleRepository;
+    private readonly ICustomerRepository _customerRepository;
+    private readonly IProductRepository _productRepository;
 
-    public SalesController(ApplicationDbContext context, IWebHostEnvironment webHostEnvironment)
+    public SalesController(ISaleRepository saleRepository, ICustomerRepository customerRepository, IProductRepository productRepository)
     {
-        _context = context;
-        _webHostEnvironment = webHostEnvironment;
+        _saleRepository = saleRepository;
+        _customerRepository = customerRepository;
+        _productRepository = productRepository;
     }
 
-    // GET: Sales
     public async Task<IActionResult> Index()
     {
-        var sales = await _context.Sales
-            .Include(s => s.Customer)
-            .OrderByDescending(s => s.SaleDate)
-            .ToListAsync();
-            
+        var sales = await _saleRepository.GetAllAsync();
         return View(sales);
     }
 
-    // GET: Sales/Create
     public async Task<IActionResult> Create()
     {
-        var viewModel = new SaleViewModel
+        var customers = await _customerRepository.GetAllAsync();
+        var products = await _productRepository.GetAllAsync();
+        var model = new SaleViewModel
         {
-            Customers = await _context.Customers.Select(c => new SelectListItem
-            {
-                Value = c.Id.ToString(),
-                Text = c.FullName
-            }).ToListAsync(),
-            Products = await _context.Products.Select(p => new SelectListItem
-            {
-                Value = p.Id.ToString(),
-                Text = p.Name
-            }).ToListAsync()
+            Customers = customers.Select(c => new SelectListItem { Value = c.Id.ToString(), Text = c.FullName }).ToList(),
+            Products = products.Select(p => new SelectListItem { Value = p.Id.ToString(), Text = p.Name }).ToList()
         };
-        return View(viewModel);
+        return View(model);
     }
 
-    // POST: Sales/Create
     [HttpPost]
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> Create(SaleViewModel model)
     {
-        if (model.CustomerId == 0 || !model.Items.Any())
+        if (ModelState.IsValid)
         {
-            TempData["ErrorMessage"] = "Please select a customer and add at least one product.";
-            return RedirectToAction(nameof(Create));
-        }
-
-        var sale = new Sale
-        {
-            CustomerId = model.CustomerId,
-            SaleDate = DateTime.UtcNow,
-            TotalAmount = 0
-        };
-
-        decimal totalAmount = 0;
-
-        foreach (var item in model.Items)
-        {
-            var product = await _context.Products.FindAsync(item.ProductId);
-            if (product == null) { continue; }
-
-            var saleDetail = new SaleDetail
+            var sale = new Sale
             {
-                Sale = sale,
-                ProductId = product.Id,
-                Quantity = item.Quantity,
-                UnitPrice = product.Price
+                CustomerId = model.CustomerId,
+                SaleDate = DateTime.UtcNow,
+                SaleDetails = model.Items.Select(i => new SaleDetail { ProductId = i.ProductId, Quantity = i.Quantity }).ToList()
             };
-            
-            totalAmount += saleDetail.TotalPrice;
-            sale.SaleDetails.Add(saleDetail);
+            await _saleRepository.AddAsync(sale);
+            return RedirectToAction(nameof(Index));
         }
-
-        sale.TotalAmount = totalAmount;
-
-        _context.Sales.Add(sale);
-        await _context.SaveChangesAsync();
-
-        // --- PDF Generation with Error Handling ---
-        try
+        return View(model);
+    }
+    
+    // New Details Method
+    public async Task<IActionResult> Details(int? id)
+    {
+        if (id == null)
         {
-            var saleWithDetails = await _context.Sales
-                .Include(s => s.Customer)
-                .Include(s => s.SaleDetails)
-                .ThenInclude(sd => sd.Product)
-                .FirstOrDefaultAsync(s => s.Id == sale.Id);
-
-            if (saleWithDetails != null)
-            {
-                var document = new SaleInvoiceDocument(saleWithDetails);
-                var pdfBytes = document.GeneratePdf();
-
-                var receiptsDir = Path.Combine(_webHostEnvironment.WebRootPath, "receipts");
-                if (!Directory.Exists(receiptsDir)) Directory.CreateDirectory(receiptsDir);
-
-                var filePath = Path.Combine(receiptsDir, $"receipt_{sale.Id}.pdf");
-                await System.IO.File.WriteAllBytesAsync(filePath, pdfBytes);
-            }
+            return NotFound();
         }
-        catch (Exception ex)
+
+        var sale = await _saleRepository.GetByIdAsync(id.Value);
+        if (sale == null)
         {
-            // If PDF generation fails, store the error message to show it in the UI
-            TempData["PdfGenerationError"] = $"Sale was created successfully, but failed to generate PDF. Error: {ex.Message}";
+            return NotFound();
         }
 
-        return RedirectToAction(nameof(Index));
+        return View(sale);
+    }
+    
+    // New GenerateInvoice Method
+    public async Task<IActionResult> GenerateInvoice(int id)
+    {
+        var sale = await _saleRepository.GetByIdAsync(id);
+        if (sale == null)
+        {
+            return NotFound();
+        }
+
+        var document = new SaleInvoiceDocument(sale);
+        var pdf = document.GeneratePdf();
+        return File(pdf, "application/pdf", $"SaleInvoice-{id}.pdf");
     }
 }

@@ -1,4 +1,4 @@
-namespace WebApplication1.Models;
+namespace Firmeza.Web.Models;
 
 public class ErrorViewModel
 {
