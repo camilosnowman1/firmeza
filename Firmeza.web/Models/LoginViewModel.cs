@@ -1,17 +1,18 @@
 using System.ComponentModel.DataAnnotations;
 
-namespace Firmeza.Web.Models;
-
-public class LoginViewModel
+namespace Firmeza.web.Models
 {
-    [Required]
-    [EmailAddress]
-    public string Email { get; set; } = string.Empty;
+    public class LoginViewModel
+    {
+        [Required]
+        [EmailAddress]
+        public string Email { get; set; }
 
-    [Required]
-    [DataType(DataType.Password)]
-    public string Password { get; set; } = string.Empty;
+        [Required]
+        [DataType(DataType.Password)]
+        public string Password { get; set; }
 
-    [Display(Name = "Remember me?")]
-    public bool RememberMe { get; set; }
+        [Display(Name = "Remember me?")]
+        public bool RememberMe { get; set; }
+    }
 }

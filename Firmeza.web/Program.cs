@@ -14,25 +14,33 @@ QuestPDF.Settings.License = LicenseType.Community;
 var builder = WebApplication.CreateBuilder(args);
 
 // 2. Configure the database context and Identity
+var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
+
+// FORCED DEBUGGING: If in Development, use the correct hardcoded connection string.
+if (builder.Environment.IsDevelopment())
+{
+    connectionString = "Host=localhost;Port=5433;Database=firmeza_db;Username=postgres;Password=SuperSecure123";
+}
+
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
-    options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection"), 
+    options.UseNpgsql(connectionString, 
         b => b.MigrationsAssembly("Firmeza.Infrastructure")));
 
+// Modified to include AddRoles and AddRoleManager
 builder.Services.AddIdentity<ApplicationUser, IdentityRole>()
     .AddEntityFrameworkStores<ApplicationDbContext>()
-    .AddDefaultTokenProviders();
+    .AddDefaultTokenProviders()
+    .AddRoles<IdentityRole>()
+    .AddRoleManager<RoleManager<IdentityRole>>();
 
 // 3. Register Repositories and Services
 builder.Services.AddScoped<IProductRepository, ProductRepository>();
 builder.Services.AddScoped<ICustomerRepository, CustomerRepository>();
 builder.Services.AddScoped<ISaleRepository, SaleRepository>();
-builder.Services.AddScoped<IVehicleRepository, VehicleRepository>(); // Added this missing line
+builder.Services.AddScoped<IVehicleRepository, VehicleRepository>();
 builder.Services.AddTransient<IEmailService, SmtpEmailService>();
 
-// Removed the problematic custom model binder configuration.
-// The RequestLocalizationOptions should handle decimal parsing based on culture.
 builder.Services.AddControllersWithViews();
-
 
 var app = builder.Build();
 

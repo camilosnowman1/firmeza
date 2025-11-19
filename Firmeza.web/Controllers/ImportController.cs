@@ -94,7 +94,7 @@ public class ImportController : Controller
         }
 
         TempData["ImportLog"] = log.ToString();
-        return RedirectToAction(nameof(Index));
+        return RedirectToAction("Index", "Products"); // Redirect to Products list
     }
 
     [HttpPost]
@@ -178,7 +178,7 @@ public class ImportController : Controller
         }
 
         TempData["ImportLog"] = log.ToString();
-        return RedirectToAction(nameof(Index));
+        return RedirectToAction("Index", "Customers"); // Redirect to Customers list
     }
     
     [HttpPost]
@@ -252,6 +252,6 @@ public class ImportController : Controller
         
         await _context.SaveChangesAsync();
         TempData["ImportLog"] = log.ToString();
-        return RedirectToAction(nameof(Index));
+        return RedirectToAction("Index", "Vehicles"); // Redirect to Vehicles list
     }
 }
