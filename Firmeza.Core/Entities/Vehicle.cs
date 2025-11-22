@@ -17,6 +17,9 @@ public class Vehicle
     [Required]
     [Column(TypeName = "decimal(18,2)")]
     public decimal HourlyRate { get; set; }
+    
+    [MaxLength(500)]
+    public string? ImageUrl { get; set; }
 
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
 }

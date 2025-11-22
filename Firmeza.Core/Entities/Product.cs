@@ -18,5 +18,8 @@ public class Product
     
     public int Stock { get; set; }
     
+    [MaxLength(500)]
+    public string? ImageUrl { get; set; }
+    
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
 }

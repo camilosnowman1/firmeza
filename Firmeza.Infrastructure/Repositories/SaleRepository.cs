@@ -26,6 +26,15 @@ namespace Firmeza.Infrastructure.Repositories
                 .FirstOrDefaultAsync(s => s.Id == id);
         }
 
+        public IQueryable<Sale> GetAll()
+        {
+            return _context.Sales
+                .Include(s => s.Customer)
+                .Include(s => s.SaleDetails)
+                .ThenInclude(sd => sd.Product)
+                .AsQueryable();
+        }
+
         public async Task<IEnumerable<Sale>> GetAllAsync()
         {
             return await _context.Sales

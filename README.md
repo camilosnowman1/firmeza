@@ -1,151 +1,71 @@
-ahora# Firmeza - Sales and Rental Management System
+# Proyecto Firmeza
 
-## Project Description
+Firmeza es un sistema de gestión empresarial diseñado para negocios del sector de la construcción. Incluye un panel administrativo web y una API RESTful para gestionar productos, clientes, ventas y alquileres.
 
-Firmeza is a comprehensive system designed for managing sales and rentals of products and vehicles. The application is built with ASP.NET Core 8, following a hexagonal architecture (also known as ports and adapters) to ensure clear separation of concerns, high maintainability, and ease of testing.
+## Módulos del Proyecto
 
-The system consists of two main components:
-1.  **Firmeza.web:** A web administration application (control panel) for managing products, customers, vehicles, sales, and rentals.
-2.  **Firmeza.Api:** A RESTful API that exposes the core business functionalities, allowing integration with other systems or future client applications.
+La solución está organizada en los siguientes proyectos:
 
-## Key Features
+-   `Firmeza.Core`: Contiene las entidades del dominio, interfaces y la lógica de negocio principal.
+-   `Firmeza.Infrastructure`: Implementa la capa de acceso a datos (repositorios con Entity Framework Core), la conexión a la base de datos PostgreSQL y servicios externos como el envío de correos (SMTP).
+-   `Firmeza.web`: Un panel administrativo construido con ASP.NET Core y Razor Pages. Permite la gestión interna del negocio, incluyendo la importación de datos desde Excel.
+-   `Firmeza.Api`: Una API RESTful construida con ASP.NET Core Web API. Expone los endpoints para ser consumidos por aplicaciones cliente (como un futuro portal Blazor).
+-   `Firmeza.Tests`: Proyecto de pruebas unitarias utilizando xUnit para validar la funcionalidad del sistema.
 
-### Web Administration Panel (Firmeza.web)
-*   **Authentication and Authorization:** Secure access with administrator roles.
-*   **Dynamic Dashboard:** Displays real-time statistics (Total Sales, Total Revenue, New Customers).
-*   **Product Management (CRUD):** Create, Read (with search and pagination), Update, Delete products.
-*   **Customer Management (CRUD):** Create, Read (with search and pagination), Update, Delete customers.
-*   **Vehicle Management (CRUD):** Create, Read (with search and pagination), Update, Delete vehicles.
-*   **Sales Management:** Create new sales with multiple products, view sales details.
-*   **Rental Management:** Create new rentals, view rental details.
-*   **Data Import/Export:**
-    *   Import Products, Customers, and Vehicles from Excel files.
-    *   Export Products, Customers, and Vehicles to Excel files.
-*   **PDF Document Generation:**
-    *   Sales Invoices in PDF format.
-    *   Rental Contracts in PDF format.
-*   **Dynamic Calculations:** Real-time cost estimator for vehicle creation and rentals.
-*   **Localization:** Currency formatted in Colombian Pesos (COP).
-*   **Email Service:** Welcome emails sent upon new customer registration.
+## Tecnologías Utilizadas
 
-### RESTful API (Firmeza.Api)
-*   **JWT Authentication:** Secure access to API endpoints.
-*   **CRUD Endpoints:** For Products, Customers, and Sales.
-*   **Swagger/OpenAPI:** Interactive API documentation.
+-   **Backend:** .NET 8, ASP.NET Core (Razor Pages & Web API)
+-   **Base de Datos:** PostgreSQL
+-   **ORM:** Entity Framework Core
+-   **Autenticación:** ASP.NET Core Identity con JSON Web Tokens (JWT) para la API.
+-   **Mapeo de Objetos:** AutoMapper
+-   **Documentación API:** Swashbuckle (Swagger)
+-   **Manipulación de Excel:** EPPlus
+-   **Generación de PDF:** QuestPDF
+-   **Pruebas:** xUnit
+-   **Contenerización:** Docker
 
-## Architecture
+## Instalación y Ejecución
 
-The project follows a **Hexagonal Architecture (Ports & Adapters)**, dividing the application into clear layers:
+### Prerrequisitos
 
-*   **Firmeza.Core:** Contains the core business logic, domain entities, and repository interfaces (ports). It is independent of any external technology.
-*   **Firmeza.Infrastructure:** Implements the interfaces defined in `Firmeza.Core`, acting as adapters for external technologies such as Entity Framework Core (for PostgreSQL database) and the SMTP email service.
-*   **Firmeza.web:** The web user interface (primary adapter) that consumes services and repositories through `Firmeza.Core` and `Firmeza.Infrastructure`.
-*   **Firmeza.Api:** The API interface (primary adapter) that exposes business functionality.
-*   **Firmeza.Tests:** Project dedicated to unit tests for application components.
+-   [.NET 8 SDK](https://dotnet.microsoft.com/download/dotnet/8.0)
+-   [Docker](https://www.docker.com/products/docker-desktop) (Opcional, para despliegue)
 
-## Technologies Used
+### Base de Datos
 
-*   **Backend:** ASP.NET Core 8
-*   **Database:** PostgreSQL
-*   **ORM:** Entity Framework Core 8
-*   **Containers:** Docker, Docker Compose
-*   **PDF Generation:** QuestPDF
-*   **Excel Handling:** EPPlus
-*   **Authentication:** ASP.NET Core Identity, JWT Bearer Authentication
-*   **Unit Testing:** NUnit, Moq, Microsoft.EntityFrameworkCore.InMemory
-*   **Object Mapping:** AutoMapper
-*   **Frontend:** HTML, CSS, JavaScript, Bootstrap 5
+La cadena de conexión se encuentra en los archivos `appsettings.json` de los proyectos `Firmeza.web` y `Firmeza.Api`. Actualmente, está configurada para conectarse a una instancia de PostgreSQL en Clever Cloud.
 
-## Getting Started
+Si deseas usar una base de datos local, asegúrate de tener PostgreSQL instalado y actualiza la cadena de conexión.
 
-### Prerequisites
+### Ejecutar la Aplicación
 
-Ensure you have the following installed:
-*   .NET SDK 8.0
-*   Docker Desktop (includes Docker Compose)
+Puedes ejecutar ambos proyectos simultáneamente desde tu IDE (Rider/Visual Studio) o a través de la línea de comandos:
 
-### 1. Clone the Repository
-
+**Para ejecutar el Panel Web (Razor):**
 ```bash
-git clone <YOUR_REPOSITORY_URL>
-cd Analizador_de_Ventas_para_una_Tienda_de_electrodom-sticos/Firmeza
+dotnet run --project Firmeza.web/Firmeza.web.csproj
 ```
+La aplicación estará disponible en `http://localhost:5168`.
 
-### 2. Set Up the Database with Docker Compose
-
-From the project root (`/Firmeza`), bring up the PostgreSQL container:
-
+**Para ejecutar la API:**
 ```bash
-docker compose up -d
+dotnet run --project Firmeza.Api/Firmeza.Api.csproj
 ```
+La API estará disponible en `http://localhost:5000`.
 
-**Note:** If you encounter an `address already in use` error (port 5433), another PostgreSQL service might be running on your machine. You can stop it with:
-```bash
-sudo systemctl stop postgresql
-```
-Then, try `docker compose up -d` again.
+## API Endpoints
 
-### 3. Apply Entity Framework Migrations and Seed Data
+La API está versionada (`/api/v1`) y documentada con Swagger. Una vez que la API esté en ejecución, puedes acceder a la documentación interactiva en:
 
-Once the database container is running, apply the migrations and seed initial data.
+`http://localhost:5000/swagger`
 
-**First, ensure the `Firmeza.Tests` project compiles correctly.** If not, run `dotnet clean` and `dotnet build` from the solution root.
+### Endpoints Principales
 
-Then, from the project root (`/Firmeza`), execute the following commands:
+-   `api/v1/Auth/register`: Registro de nuevos usuarios (con rol "Cliente").
+-   `api/v1/Auth/login`: Autenticación y obtención de token JWT.
+-   `api/v1/Products`: CRUD completo para la gestión de productos.
+-   `api/v1/Customers`: CRUD completo para la gestión de clientes.
+-   `api/v1/Sales`: CRUD completo para la gestión de ventas.
 
-```bash
-# Navigate to the infrastructure project to create the migration
-cd Firmeza.Infrastructure
-
-# Apply database updates (this will create the database and tables)
-dotnet ef database update --startup-project ../Firmeza.web
-```
-
-### 4. Run the Web Application (Firmeza.web)
-
-From the project root (`/Firmeza`), navigate to the web project and run it:
-
-```bash
-cd Firmeza.web
-dotnet run
-```
-Or, if you are using Rider, simply select `Firmeza.web` as the startup project and click the "Play" button.
-
-The application will automatically open in your browser at `http://localhost:5168`.
-
-### 5. Access the Admin Panel
-
-**Administrator Credentials:**
-*   **Email:** `admin@firmeza.dev`
-*   **Password:** `Admin123!`
-
-### 6. Run the API (Firmeza.Api)
-
-From the project root (`/Firmeza`), navigate to the API project and run it:
-
-```bash
-cd Firmeza.Api
-dotnet run
-```
-The API will be available at `https://localhost:7070` (HTTPS) and `http://localhost:5168` (HTTP). You can access the Swagger documentation at `https://localhost:7070/swagger` or `http://localhost:5168/swagger`.
-
-### 7. Run Unit Tests
-
-From the project root (`/Firmeza`), execute the tests:
-
-```bash
-cd Firmeza.Tests
-dotnet test
-```
-Alternatively, in Rider, you can use the "Unit Tests" window to run all tests or specific tests.
-
-## Basic Usage
-
-1.  **Log In:** Access `http://localhost:5168` and log in with the administrator credentials.
-2.  **Navigate:** Use the top menu to access different sections (Dashboard, Products, Customers, etc.).
-3.  **CRUD:** In the Products, Customers, and Vehicles sections, you can create new records, edit existing ones, delete them, and use search/pagination.
-4.  **Import/Export:** In the "Import/Export" section, you can upload Excel files to import data or download templates.
-5.  **Sales and Rentals:** Create new sales and rentals, then view their details to generate invoices or contracts in PDF.
-
----
-This `README.md` provides a solid starting point! Feel free to review it and suggest any additions or changes you deem necessary.
+Para acceder a los endpoints protegidos, debes incluir el token JWT en la cabecera `Authorization` con el esquema `Bearer`.

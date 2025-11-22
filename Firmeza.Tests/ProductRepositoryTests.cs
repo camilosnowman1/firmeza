@@ -1,41 +1,38 @@
-using NUnit.Framework;
+using Xunit;
 using Firmeza.Core.Entities;
 using Firmeza.Infrastructure.Persistence;
 using Firmeza.Infrastructure.Repositories;
 using Microsoft.EntityFrameworkCore;
+using System;
 using System.Linq;
 using System.Threading.Tasks;
 
 namespace Firmeza.Tests;
 
-[TestFixture]
-public class ProductRepositoryTests
+public class ProductRepositoryTests : IDisposable
 {
-    private ApplicationDbContext _context;
-    private ProductRepository _repository;
+    private readonly ApplicationDbContext _context;
+    private readonly ProductRepository _repository;
 
-    [SetUp]
-    public void Setup()
+    public ProductRepositoryTests()
     {
         // Use an in-memory database for testing
         var options = new DbContextOptionsBuilder<ApplicationDbContext>()
-            .UseInMemoryDatabase(databaseName: "TestDatabase")
+            .UseInMemoryDatabase(databaseName: Guid.NewGuid().ToString()) // Unique DB per test class instance
             .Options;
         _context = new ApplicationDbContext(options);
         _repository = new ProductRepository(_context);
 
-        // Clear the database before each test
-        _context.Database.EnsureDeleted();
         _context.Database.EnsureCreated();
     }
 
-    [TearDown]
-    public void Teardown()
+    public void Dispose()
     {
+        _context.Database.EnsureDeleted();
         _context.Dispose();
     }
 
-    [Test]
+    [Fact]
     public async Task AddAsync_ShouldAddProduct()
     {
         // Arrange
@@ -46,13 +43,13 @@ public class ProductRepositoryTests
 
         // Assert
         var savedProduct = await _context.Products.FirstOrDefaultAsync(p => p.Name == "Test Product");
-        Assert.IsNotNull(savedProduct);
-        Assert.AreEqual("Test Product", savedProduct.Name);
-        Assert.AreEqual(100, savedProduct.Price);
-        Assert.AreEqual(10, savedProduct.Stock);
+        Assert.NotNull(savedProduct);
+        Assert.Equal("Test Product", savedProduct.Name);
+        Assert.Equal(100, savedProduct.Price);
+        Assert.Equal(10, savedProduct.Stock);
     }
 
-    [Test]
+    [Fact]
     public async Task GetByIdAsync_ShouldReturnProduct()
     {
         // Arrange
@@ -64,11 +61,11 @@ public class ProductRepositoryTests
         var fetchedProduct = await _repository.GetByIdAsync(product.Id);
 
         // Assert
-        Assert.IsNotNull(fetchedProduct);
-        Assert.AreEqual(product.Name, fetchedProduct.Name);
+        Assert.NotNull(fetchedProduct);
+        Assert.Equal(product.Name, fetchedProduct.Name);
     }
 
-    [Test]
+    [Fact]
     public async Task GetAll_ShouldReturnAllProducts()
     {
         // Arrange
@@ -80,10 +77,10 @@ public class ProductRepositoryTests
         var products = _repository.GetAll().ToList();
 
         // Assert
-        Assert.AreEqual(2, products.Count);
+        Assert.Equal(2, products.Count);
     }
 
-    [Test]
+    [Fact]
     public async Task UpdateAsync_ShouldUpdateProduct()
     {
         // Arrange
@@ -99,12 +96,12 @@ public class ProductRepositoryTests
 
         // Assert
         var updatedProduct = await _context.Products.FirstOrDefaultAsync(p => p.Id == product.Id);
-        Assert.IsNotNull(updatedProduct);
-        Assert.AreEqual("Updated Name", updatedProduct.Name);
-        Assert.AreEqual(15, updatedProduct.Price);
+        Assert.NotNull(updatedProduct);
+        Assert.Equal("Updated Name", updatedProduct.Name);
+        Assert.Equal(15, updatedProduct.Price);
     }
 
-    [Test]
+    [Fact]
     public async Task DeleteAsync_ShouldRemoveProduct()
     {
         // Arrange
@@ -117,6 +114,6 @@ public class ProductRepositoryTests
 
         // Assert
         var deletedProduct = await _context.Products.FirstOrDefaultAsync(p => p.Id == product.Id);
-        Assert.IsNull(deletedProduct);
+        Assert.Null(deletedProduct);
     }
 }

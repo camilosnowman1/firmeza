@@ -1,15 +1,10 @@
-@model IEnumerable<Firmeza.Core.Entities.Rental>
+@model Firmeza.Web.Helpers.PaginatedList<Firmeza.Core.Entities.Rental>
 
 @{
     ViewData["Title"] = "Rentals";
-    var now = DateTime.UtcNow;
 }
 
 <h2>Rentals</h2>
-
-<div class="alert alert-info">
-    <strong>Current Server Time (UTC):</strong> @now.ToString("yyyy-MM-dd HH:mm:ss")
-</div>
 
 <p>
     <a asp-action="Create" class="btn btn-primary">Create New</a>
@@ -20,38 +15,41 @@
         <tr>
             <th>Customer</th>
             <th>Vehicle</th>
-            <th>Start Date (UTC)</th>
-            <th>End Date (UTC)</th>
-            <th>Is Active?</th>
-            <th>Total</th>
-            <th></th>
+            <th>Start Date</th>
+            <th>End Date</th>
+            <th>Total Amount</th>
+            <th>Actions</th>
         </tr>
     </thead>
     <tbody>
 @foreach (var item in Model) {
-        var isActive = (item.StartDate <= now && item.EndDate >= now);
-        <tr class="@(isActive ? "table-success" : "")">
+        <tr>
             <td>@Html.DisplayFor(modelItem => item.Customer.FullName)</td>
             <td>@Html.DisplayFor(modelItem => item.Vehicle.Name)</td>
-            <td>@item.StartDate.ToString("yyyy-MM-dd HH:mm:ss")</td>
-            <td>@item.EndDate.ToString("yyyy-MM-dd HH:mm:ss")</td>
+            <td>@item.StartDate.ToLocalTime().ToString("g")</td>
+            <td>@item.EndDate.ToLocalTime().ToString("g")</td>
+            <td>@Html.DisplayFor(modelItem => item.TotalAmount)</td>
             <td>
-                @if (isActive)
-                {
-                    <span class="badge bg-success">Yes</span>
-                }
-                else
-                {
-                    <span class="badge bg-secondary">No</span>
-                }
-            </td>
-            <td>@item.TotalAmount.ToString("C0")</td>
-            <td>
-                <a asp-action="Edit" asp-route-id="@item.Id">Edit</a> |
-                <a asp-action="Details" asp-route-id="@item.Id">Details</a> | <!-- Added Details link -->
-                <a asp-action="Delete" asp-route-id="@item.Id">Delete</a>
+                <a asp-action="Details" asp-route-id="@item.Id" class="btn btn-info btn-sm">Details</a>
+                <a asp-action="GenerateContract" asp-route-id="@item.Id" class="btn btn-secondary btn-sm">Contract</a>
             </td>
         </tr>
 }
     </tbody>
 </table>
+
+@{
+    var prevDisabled = !Model.HasPreviousPage ? "disabled" : "";
+    var nextDisabled = !Model.HasNextPage ? "disabled" : "";
+}
+
+<a asp-action="Index"
+   asp-route-pageNumber="@(Model.PageIndex - 1)"
+   class="btn btn-default @prevDisabled">
+    Previous
+</a>
+<a asp-action="Index"
+   asp-route-pageNumber="@(Model.PageIndex + 1)"
+   class="btn btn-default @nextDisabled">
+    Next
+</a>

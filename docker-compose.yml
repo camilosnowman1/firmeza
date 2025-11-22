@@ -1,0 +1,49 @@
+services:
+  tests:
+    build:
+      context: .
+      dockerfile: Firmeza.Tests/Dockerfile
+    container_name: firmeza_tests
+    # No environment override needed, uses appsettings.json or existing env vars
+
+  api:
+    build:
+      context: .
+      dockerfile: Firmeza.Api/Dockerfile
+    container_name: firmeza_api
+    restart: on-failure
+    ports:
+      - "5000:8080"
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development
+    depends_on:
+      tests:
+        condition: service_completed_successfully
+
+  admin:
+    build:
+      context: .
+      dockerfile: Firmeza.web/Dockerfile
+    container_name: firmeza_admin
+    restart: on-failure
+    ports:
+      - "5001:8080"
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development
+    depends_on:
+      tests:
+        condition: service_completed_successfully
+
+  client:
+    build:
+      context: ./Firmeza.Client
+      dockerfile: Dockerfile
+    container_name: firmeza_client
+    restart: on-failure
+    ports:
+      - "4200:80"
+    depends_on:
+      api:
+        condition: service_started
+      tests:
+        condition: service_completed_successfully

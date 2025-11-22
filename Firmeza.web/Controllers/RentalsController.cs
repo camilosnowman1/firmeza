@@ -24,15 +24,15 @@ public class RentalsController : Controller
         _context = context;
     }
 
-    public async Task<IActionResult> Index()
+    public async Task<IActionResult> Index(int? pageNumber)
     {
-        var rentals = await _context.Rentals
+        var rentals = _context.Rentals
             .Include(r => r.Customer)
             .Include(r => r.Vehicle)
-            .OrderByDescending(r => r.StartDate)
-            .ToListAsync();
+            .OrderByDescending(r => r.StartDate);
             
-        return View(rentals);
+        int pageSize = 10;
+        return View(await PaginatedList<Rental>.CreateAsync(rentals.AsNoTracking(), pageNumber ?? 1, pageSize));
     }
 
     public async Task<IActionResult> Create()

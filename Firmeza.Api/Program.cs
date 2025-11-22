@@ -11,16 +11,37 @@ using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.ApiExplorer;
-using Microsoft.AspNetCore.Mvc.Versioning; // Added this missing using
+using Microsoft.AspNetCore.Mvc.Versioning;
 
 var builder = WebApplication.CreateBuilder(args);
+
+// --- Add CORS Policy ---
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy("AllowAngularApp",
+        policy =>
+        {
+            policy.WithOrigins("http://localhost:4200", "http://localhost:4201")
+                  .AllowAnyHeader()
+                  .AllowAnyMethod();
+        });
+});
 
 // Add services to the container.
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
     options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection"),
         b => b.MigrationsAssembly("Firmeza.Infrastructure")));
 
-builder.Services.AddIdentity<ApplicationUser, IdentityRole>()
+// --- Modified Identity Configuration ---
+builder.Services.AddIdentity<ApplicationUser, IdentityRole>(options =>
+{
+    // Simplified password settings for development
+    options.Password.RequireDigit = false;
+    options.Password.RequiredLength = 4;
+    options.Password.RequireNonAlphanumeric = false;
+    options.Password.RequireUppercase = false;
+    options.Password.RequireLowercase = false;
+})
     .AddEntityFrameworkStores<ApplicationDbContext>()
     .AddDefaultTokenProviders();
 
@@ -50,6 +71,7 @@ builder.Services.AddScoped<ISaleRepository, SaleRepository>();
 builder.Services.AddScoped<IRentalRepository, RentalRepository>();
 builder.Services.AddScoped<IVehicleRepository, VehicleRepository>();
 builder.Services.AddTransient<IEmailService, SmtpEmailService>();
+builder.Services.AddScoped<SeedingService>();
 
 builder.Services.AddAutoMapper(typeof(Program));
 
@@ -118,6 +140,41 @@ builder.Services.AddSwaggerGen(options =>
 
 var app = builder.Build();
 
+// --- Seed Roles, Admin User, and Products ---
+using (var scope = app.Services.CreateScope())
+{
+    var services = scope.ServiceProvider;
+    var roleManager = services.GetRequiredService<RoleManager<IdentityRole>>();
+    var userManager = services.GetRequiredService<UserManager<ApplicationUser>>();
+    var seedingService = services.GetRequiredService<SeedingService>();
+
+    var roles = new[] { "Admin", "Cliente" };
+    foreach (var role in roles)
+    {
+        if (!await roleManager.RoleExistsAsync(role))
+        {
+            await roleManager.CreateAsync(new IdentityRole(role));
+        }
+    }
+
+    // Create a default Admin user
+    var adminEmail = "camilosnowman@gmail.com";
+    if (await userManager.FindByEmailAsync(adminEmail) == null)
+    {
+        var adminUser = new ApplicationUser { UserName = adminEmail, Email = adminEmail, EmailConfirmed = true };
+        var result = await userManager.CreateAsync(adminUser, "Camilosnow123#");
+        if (result.Succeeded)
+        {
+            await userManager.AddToRoleAsync(adminUser, "Admin");
+        }
+    }
+
+    // Seed Products and Vehicles
+    // TODO: Uncomment after adding ImageUrl column to database
+    // await seedingService.SeedAsync();
+}
+
+
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
 {
@@ -131,6 +188,9 @@ if (app.Environment.IsDevelopment())
         }
     });
 }
+
+// --- Use CORS ---
+app.UseCors("AllowAngularApp");
 
 app.UseAuthentication();
 app.UseAuthorization();

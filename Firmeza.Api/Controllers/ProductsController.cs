@@ -25,14 +25,34 @@ public class ProductsController : ControllerBase
     }
 
     // GET: api/v1/Products
+    [AllowAnonymous]
     [HttpGet]
-    public async Task<ActionResult<IEnumerable<ProductDto>>> GetProducts()
+    public async Task<ActionResult> GetProducts([FromQuery] int pageNumber = 1, [FromQuery] int pageSize = 9)
     {
-        var products = await _productRepository.GetAllAsync();
-        return Ok(_mapper.Map<IEnumerable<ProductDto>>(products));
+        var allProducts = await _productRepository.GetAllAsync();
+        var totalCount = allProducts.Count();
+        
+        var products = allProducts
+            .Skip((pageNumber - 1) * pageSize)
+            .Take(pageSize)
+            .ToList();
+        
+        var productDtos = _mapper.Map<IEnumerable<ProductDto>>(products);
+        
+        var response = new
+        {
+            TotalCount = totalCount,
+            PageNumber = pageNumber,
+            PageSize = pageSize,
+            TotalPages = (int)Math.Ceiling(totalCount / (double)pageSize),
+            Data = productDtos
+        };
+        
+        return Ok(response);
     }
 
     // GET: api/v1/Products/5
+    [AllowAnonymous]
     [HttpGet("{id}")]
     public async Task<ActionResult<ProductDto>> GetProduct(int id)
     {

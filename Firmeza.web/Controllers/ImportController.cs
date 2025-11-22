@@ -5,6 +5,7 @@ using Microsoft.AspNetCore.Mvc;
 using OfficeOpenXml;
 using System.Text;
 using Microsoft.EntityFrameworkCore;
+using System.Globalization;
 
 namespace Firmeza.Web.Controllers;
 
@@ -23,6 +24,44 @@ public class ImportController : Controller
         ExcelPackage.LicenseContext = LicenseContext.NonCommercial;
     }
 
+    private class ImportSummary
+    {
+        public int TotalRows { get; set; }
+        public int SuccessCount { get; set; }
+        public int ErrorCount { get; set; }
+        public List<string> Details { get; set; } = new List<string>();
+
+        public override string ToString()
+        {
+            var sb = new StringBuilder();
+            sb.AppendLine($"Import Completed: Processed {TotalRows} rows. Success: {SuccessCount}, Errors: {ErrorCount}.");
+            sb.AppendLine("Details:");
+            foreach (var detail in Details)
+            {
+                sb.AppendLine(detail);
+            }
+            return sb.ToString();
+        }
+    }
+
+    private IActionResult ValidateFile(IFormFile file)
+    {
+        if (file == null || file.Length == 0)
+        {
+            TempData["ErrorMessage"] = "Please select a file to upload.";
+            return RedirectToAction(nameof(Index));
+        }
+
+        var extension = Path.GetExtension(file.FileName).ToLower();
+        if (extension != ".xlsx" && extension != ".xls")
+        {
+            TempData["ErrorMessage"] = "Invalid file type. Please upload an Excel file (.xlsx or .xls).";
+            return RedirectToAction(nameof(Index));
+        }
+
+        return null;
+    }
+
     public IActionResult Index()
     {
         return View();
@@ -31,13 +70,10 @@ public class ImportController : Controller
     [HttpPost]
     public async Task<IActionResult> UploadProducts(IFormFile file)
     {
-        if (file == null || file.Length == 0)
-        {
-            TempData["ErrorMessage"] = "Please select a file to upload.";
-            return RedirectToAction(nameof(Index));
-        }
+        var validationResult = ValidateFile(file);
+        if (validationResult != null) return validationResult;
 
-        var log = new StringBuilder();
+        var summary = new ImportSummary();
         using var stream = new MemoryStream();
         await file.CopyToAsync(stream);
 
@@ -59,8 +95,8 @@ public class ImportController : Controller
             }
         }
 
-        log.AppendLine($"Processing {worksheet.Dimension.End.Row - 1} product data rows...");
-
+        summary.TotalRows = worksheet.Dimension.End.Row - 1;
+        
         for (int row = 2; row <= worksheet.Dimension.End.Row; row++)
         {
             string? GetValue(string headerName) => 
@@ -70,43 +106,48 @@ public class ImportController : Controller
             if (!string.IsNullOrWhiteSpace(productName))
             {
                 var productPriceStr = GetValue("price");
-                if (decimal.TryParse(productPriceStr, out var productPrice))
+                if (decimal.TryParse(productPriceStr, NumberStyles.Any, CultureInfo.InvariantCulture, out var productPrice))
                 {
                     var products = await _productRepository.GetAllAsync();
                     var product = products.FirstOrDefault(p => p.Name.Equals(productName, StringComparison.OrdinalIgnoreCase));
                     if (product == null)
                     {
                         await _productRepository.AddAsync(new Product { Name = productName, Price = productPrice, Stock = 0 });
-                        log.AppendLine($"- Row {row}: CREATED new product '{productName}'.");
+                        summary.Details.Add($"- Row {row}: CREATED new product '{productName}'.");
+                        summary.SuccessCount++;
                     }
                     else
                     {
                         product.Price = productPrice;
                         await _productRepository.UpdateAsync(product);
-                        log.AppendLine($"- Row {row}: UPDATED existing product '{productName}'.");
+                        summary.Details.Add($"- Row {row}: UPDATED existing product '{productName}'.");
+                        summary.SuccessCount++;
                     }
                 }
                 else
                 {
-                    log.AppendLine($"- Row {row}: SKIPPED product '{productName}' due to invalid price.");
+                    summary.Details.Add($"- Row {row}: SKIPPED product '{productName}' due to invalid price.");
+                    summary.ErrorCount++;
                 }
+            }
+            else
+            {
+                 summary.Details.Add($"- Row {row}: SKIPPED due to missing product name.");
+                 summary.ErrorCount++;
             }
         }
 
-        TempData["ImportLog"] = log.ToString();
-        return RedirectToAction("Index", "Products"); // Redirect to Products list
+        TempData["ImportLog"] = summary.ToString();
+        return RedirectToAction("Index", "Products");
     }
 
     [HttpPost]
     public async Task<IActionResult> UploadCustomers(IFormFile file)
     {
-        if (file == null || file.Length == 0)
-        {
-            TempData["ErrorMessage"] = "Please select a file to upload.";
-            return RedirectToAction(nameof(Index));
-        }
+        var validationResult = ValidateFile(file);
+        if (validationResult != null) return validationResult;
 
-        var log = new StringBuilder();
+        var summary = new ImportSummary();
         using var stream = new MemoryStream();
         await file.CopyToAsync(stream);
 
@@ -128,7 +169,7 @@ public class ImportController : Controller
             }
         }
 
-        log.AppendLine($"Processing {worksheet.Dimension.End.Row - 1} customer data rows...");
+        summary.TotalRows = worksheet.Dimension.End.Row - 1;
 
         for (int row = 2; row <= worksheet.Dimension.End.Row; row++)
         {
@@ -138,7 +179,8 @@ public class ImportController : Controller
             var document = GetValue("document");
             if (string.IsNullOrWhiteSpace(document))
             {
-                log.AppendLine($"- Row {row}: SKIPPED due to missing document.");
+                summary.Details.Add($"- Row {row}: SKIPPED due to missing document.");
+                summary.ErrorCount++;
                 continue;
             }
 
@@ -147,7 +189,8 @@ public class ImportController : Controller
 
             if (string.IsNullOrWhiteSpace(fullName) || string.IsNullOrWhiteSpace(email))
             {
-                log.AppendLine($"- Row {row}: SKIPPED customer with document '{document}' due to missing full name or email.");
+                summary.Details.Add($"- Row {row}: SKIPPED customer with document '{document}' due to missing full name or email.");
+                summary.ErrorCount++;
                 continue;
             }
 
@@ -164,7 +207,8 @@ public class ImportController : Controller
                     PhoneNumber = GetValue("phonenumber"),
                     Address = GetValue("address")
                 });
-                log.AppendLine($"- Row {row}: CREATED new customer '{fullName}'.");
+                summary.Details.Add($"- Row {row}: CREATED new customer '{fullName}'.");
+                summary.SuccessCount++;
             }
             else
             {
@@ -173,24 +217,22 @@ public class ImportController : Controller
                 customer.PhoneNumber = GetValue("phonenumber") ?? customer.PhoneNumber;
                 customer.Address = GetValue("address") ?? customer.Address;
                 await _customerRepository.UpdateAsync(customer);
-                log.AppendLine($"- Row {row}: UPDATED existing customer '{fullName}'.");
+                summary.Details.Add($"- Row {row}: UPDATED existing customer '{fullName}'.");
+                summary.SuccessCount++;
             }
         }
 
-        TempData["ImportLog"] = log.ToString();
-        return RedirectToAction("Index", "Customers"); // Redirect to Customers list
+        TempData["ImportLog"] = summary.ToString();
+        return RedirectToAction("Index", "Customers");
     }
     
     [HttpPost]
     public async Task<IActionResult> UploadVehicles(IFormFile file)
     {
-        if (file == null || file.Length == 0)
-        {
-            TempData["ErrorMessage"] = "Please select a file to upload.";
-            return RedirectToAction(nameof(Index));
-        }
+        var validationResult = ValidateFile(file);
+        if (validationResult != null) return validationResult;
 
-        var log = new StringBuilder();
+        var summary = new ImportSummary();
         using var stream = new MemoryStream();
         await file.CopyToAsync(stream);
 
@@ -212,7 +254,7 @@ public class ImportController : Controller
             }
         }
 
-        log.AppendLine($"Processing {worksheet.Dimension.End.Row - 1} vehicle data rows...");
+        summary.TotalRows = worksheet.Dimension.End.Row - 1;
 
         for (int row = 2; row <= worksheet.Dimension.End.Row; row++)
         {
@@ -223,7 +265,7 @@ public class ImportController : Controller
             if (!string.IsNullOrWhiteSpace(vehicleName))
             {
                 var hourlyRateStr = GetValue("hourlyrate");
-                if (decimal.TryParse(hourlyRateStr, out var hourlyRate))
+                if (decimal.TryParse(hourlyRateStr, NumberStyles.Any, CultureInfo.InvariantCulture, out var hourlyRate))
                 {
                     var vehicle = await _context.Vehicles.FirstOrDefaultAsync(v => v.Name.Equals(vehicleName, StringComparison.OrdinalIgnoreCase));
                     if (vehicle == null)
@@ -234,24 +276,32 @@ public class ImportController : Controller
                             Description = GetValue("description") ?? string.Empty,
                             HourlyRate = hourlyRate
                         });
-                        log.AppendLine($"- Row {row}: CREATED new vehicle '{vehicleName}'.");
+                        summary.Details.Add($"- Row {row}: CREATED new vehicle '{vehicleName}'.");
+                        summary.SuccessCount++;
                     }
                     else
                     {
                         vehicle.Description = GetValue("description") ?? vehicle.Description;
                         vehicle.HourlyRate = hourlyRate;
-                        log.AppendLine($"- Row {row}: UPDATED existing vehicle '{vehicleName}'.");
+                        summary.Details.Add($"- Row {row}: UPDATED existing vehicle '{vehicleName}'.");
+                        summary.SuccessCount++;
                     }
                 }
                 else
                 {
-                    log.AppendLine($"- Row {row}: SKIPPED vehicle '{vehicleName}' due to invalid hourly rate.");
+                    summary.Details.Add($"- Row {row}: SKIPPED vehicle '{vehicleName}' due to invalid hourly rate.");
+                    summary.ErrorCount++;
                 }
+            }
+            else
+            {
+                summary.Details.Add($"- Row {row}: SKIPPED due to missing vehicle name.");
+                summary.ErrorCount++;
             }
         }
         
         await _context.SaveChangesAsync();
-        TempData["ImportLog"] = log.ToString();
-        return RedirectToAction("Index", "Vehicles"); // Redirect to Vehicles list
+        TempData["ImportLog"] = summary.ToString();
+        return RedirectToAction("Index", "Vehicles");
     }
 }

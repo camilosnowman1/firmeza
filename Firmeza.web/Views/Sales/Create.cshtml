@@ -1,4 +1,5 @@
 @model Firmeza.Web.Models.SaleViewModel
+@using System.Text.Json;
 
 @{ ViewData["Title"] = "Create Sale"; }
 
@@ -31,6 +32,12 @@
             <button type="button" id="add-item-btn" class="btn btn-info">Add Product</button>
         </div>
     </div>
+    
+    <div class="row mt-4">
+        <div class="col-md-10 text-right">
+            <h4>Total: <span id="total-amount">$0.00</span></h4>
+        </div>
+    </div>
 
     <div class="form-group mt-4">
         <input type="submit" value="Create Sale" class="btn btn-primary" />
@@ -46,7 +53,23 @@
             const itemsContainer = document.getElementById('items-container');
             const productSelector = document.getElementById('product-selector');
             const quantityInput = document.getElementById('quantity-input');
+            const totalAmountSpan = document.getElementById('total-amount');
+            
+            const productPrices = @Html.Raw(JsonSerializer.Serialize(Model.ProductPrices));
             let itemIndex = 0;
+
+            function updateTotals() {
+                let total = 0;
+                document.querySelectorAll('.item-row').forEach(row => {
+                    const productId = row.querySelector('input[name$=".ProductId"]').value;
+                    const quantity = row.querySelector('input[name$=".Quantity"]').value;
+                    const price = productPrices[productId];
+                    if (price) {
+                        total += quantity * price;
+                    }
+                });
+                totalAmountSpan.textContent = `$${total.toFixed(2)}`;
+            }
 
             addItemBtn.addEventListener('click', function () {
                 const productId = productSelector.value;
@@ -71,11 +94,13 @@
                 
                 itemsContainer.insertAdjacentHTML('beforeend', itemHtml);
                 itemIndex++;
+                updateTotals();
             });
 
             itemsContainer.addEventListener('click', function (e) {
                 if (e.target && e.target.classList.contains('remove-item-btn')) {
                     e.target.closest('.item-row').remove();
+                    updateTotals();
                 }
             });
         });

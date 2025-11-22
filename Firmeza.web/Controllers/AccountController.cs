@@ -58,6 +58,13 @@ public class AccountController : Controller
                 return View(model);
             }
 
+            // Check if user is Admin
+            if (!await _userManager.IsInRoleAsync(user, "Admin"))
+            {
+                ModelState.AddModelError(string.Empty, "Access denied. Only administrators can access this panel.");
+                return View(model);
+            }
+
             var result = await _signInManager.PasswordSignInAsync(user, model.Password, model.RememberMe, lockoutOnFailure: false);
             if (result.Succeeded)
             {

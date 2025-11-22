@@ -30,3 +30,7 @@ appsettings.Development.json
 # Other
 *.bak
 *.tmp
+*.txt
+
+# VS Code
+.vscode/

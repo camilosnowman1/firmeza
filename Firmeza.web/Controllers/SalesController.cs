@@ -1,6 +1,7 @@
 using Firmeza.Core.Entities;
 using Firmeza.Core.Interfaces;
 using Firmeza.Web.Documents;
+using Firmeza.Web.Helpers;
 using Firmeza.Web.Models;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -24,10 +25,11 @@ public class SalesController : Controller
         _productRepository = productRepository;
     }
 
-    public async Task<IActionResult> Index()
+    public async Task<IActionResult> Index(int? pageNumber)
     {
-        var sales = await _saleRepository.GetAllAsync();
-        return View(sales);
+        var salesQuery = _saleRepository.GetAll();
+        int pageSize = 10;
+        return View(await PaginatedList<Sale>.CreateAsync(salesQuery.OrderByDescending(s => s.SaleDate), pageNumber ?? 1, pageSize));
     }
 
     public async Task<IActionResult> Create()
@@ -37,7 +39,8 @@ public class SalesController : Controller
         var model = new SaleViewModel
         {
             Customers = customers.Select(c => new SelectListItem { Value = c.Id.ToString(), Text = c.FullName }).ToList(),
-            Products = products.Select(p => new SelectListItem { Value = p.Id.ToString(), Text = p.Name }).ToList()
+            Products = products.Select(p => new SelectListItem { Value = p.Id.ToString(), Text = $"{p.Name} (${p.Price})" }).ToList(),
+            ProductPrices = products.ToDictionary(p => p.Id, p => p.Price)
         };
         return View(model);
     }
@@ -48,15 +51,37 @@ public class SalesController : Controller
     {
         if (ModelState.IsValid)
         {
+            var totalAmount = 0m;
+            var saleDetails = new List<SaleDetail>();
+
+            foreach (var item in model.Items)
+            {
+                var product = await _productRepository.GetByIdAsync(item.ProductId);
+                if (product != null)
+                {
+                    totalAmount += item.Quantity * product.Price;
+                    saleDetails.Add(new SaleDetail { ProductId = item.ProductId, Quantity = item.Quantity });
+                }
+            }
+            
             var sale = new Sale
             {
                 CustomerId = model.CustomerId,
                 SaleDate = DateTime.UtcNow,
-                SaleDetails = model.Items.Select(i => new SaleDetail { ProductId = i.ProductId, Quantity = i.Quantity }).ToList()
+                SaleDetails = saleDetails,
+                TotalAmount = totalAmount
             };
             await _saleRepository.AddAsync(sale);
             return RedirectToAction(nameof(Index));
         }
+        
+        // Repopulate dropdowns if model is not valid
+        var customers = await _customerRepository.GetAllAsync();
+        var products = await _productRepository.GetAllAsync();
+        model.Customers = customers.Select(c => new SelectListItem { Value = c.Id.ToString(), Text = c.FullName }).ToList();
+        model.Products = products.Select(p => new SelectListItem { Value = p.Id.ToString(), Text = $"{p.Name} (${p.Price})" }).ToList();
+        model.ProductPrices = products.ToDictionary(p => p.Id, p => p.Price);
+        
         return View(model);
     }
     
@@ -73,7 +98,7 @@ public class SalesController : Controller
         {
             return NotFound();
         }
-
+    
         return View(sale);
     }
     

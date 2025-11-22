@@ -36,12 +36,12 @@ public class AuthController : ControllerBase
 
         if (result.Succeeded)
         {
-            await _userManager.AddToRoleAsync(user, "Admin"); // Assign Admin role by default
+            await _userManager.AddToRoleAsync(user, "Cliente"); // Assign Cliente role by default
             
             // Send welcome email
             try
             {
-                await _emailService.SendEmailAsync(user.Email, "Welcome to Firmeza API!", "<h1>Thank you for registering!</h1><p>Your API account has been created successfully.</p>");
+                await _emailService.SendEmailAsync(user.Email, "Welcome to Firmeza!", "<h1>Thank you for registering!</h1><p>Your account has been created successfully.</p>");
             }
             catch (Exception ex)
             {

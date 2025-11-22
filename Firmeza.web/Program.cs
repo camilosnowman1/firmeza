@@ -1,9 +1,10 @@
 using System.Globalization;
+using Firmeza.Infrastructure.Services;
 using Firmeza.Core.Entities;
 using Firmeza.Core.Interfaces;
 using Firmeza.Infrastructure.Persistence;
 using Firmeza.Infrastructure.Repositories;
-using Firmeza.Infrastructure.Services;
+
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using QuestPDF.Infrastructure;
@@ -15,12 +16,6 @@ var builder = WebApplication.CreateBuilder(args);
 
 // 2. Configure the database context and Identity
 var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
-
-// FORCED DEBUGGING: If in Development, use the correct hardcoded connection string.
-if (builder.Environment.IsDevelopment())
-{
-    connectionString = "Host=localhost;Port=5433;Database=firmeza_db;Username=postgres;Password=SuperSecure123";
-}
 
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
     options.UseNpgsql(connectionString, 
@@ -41,6 +36,7 @@ builder.Services.AddScoped<IVehicleRepository, VehicleRepository>();
 builder.Services.AddTransient<IEmailService, SmtpEmailService>();
 
 builder.Services.AddControllersWithViews();
+builder.Services.AddTransient<SeedingService>();
 
 var app = builder.Build();
 
@@ -70,4 +66,9 @@ app.MapControllerRoute(
     name: "default",
     pattern: "{controller=Home}/{action=Index}/{id?}");
 
+using (var scope = app.Services.CreateScope())
+{
+    var seeder = scope.ServiceProvider.GetRequiredService<SeedingService>();
+    await seeder.SeedAsync();
+}
 app.Run();
