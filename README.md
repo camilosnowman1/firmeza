@@ -54,18 +54,41 @@ dotnet run --project Firmeza.Api/Firmeza.Api.csproj
 ```
 La API estará disponible en `http://localhost:5000`.
 
-## API Endpoints
+## API Endpoints y Versionamiento
 
-La API está versionada (`/api/v1`) y documentada con Swagger. Una vez que la API esté en ejecución, puedes acceder a la documentación interactiva en:
+La API soporta versionamiento múltiple para garantizar la evolución sin romper la compatibilidad.
 
+### Versión 1 (`/api/v1`)
+Endpoints estándar CRUD para operaciones básicas.
+
+### Versión 2 (`/api/v2`) - **¡NUEVO!**
+Versión mejorada con funcionalidades avanzadas:
+-   **Productos:** Búsqueda avanzada, filtros por precio/stock, estadísticas de inventario, detección de stock bajo.
+-   **Clientes:** Historial de compras detallado, identificación de clientes frecuentes, métricas de consumo.
+
+### Documentación Swagger
+Puedes explorar y probar ambas versiones interactivamente:
 `http://localhost:5000/swagger`
+(Usa el selector en la esquina superior derecha para cambiar entre V1 y V2)
 
-### Endpoints Principales
+## Pruebas Unitarias (Testing)
 
--   `api/v1/Auth/register`: Registro de nuevos usuarios (con rol "Cliente").
--   `api/v1/Auth/login`: Autenticación y obtención de token JWT.
--   `api/v1/Products`: CRUD completo para la gestión de productos.
--   `api/v1/Customers`: CRUD completo para la gestión de clientes.
--   `api/v1/Sales`: CRUD completo para la gestión de ventas.
+El proyecto incluye una suite de pruebas unitarias robusta utilizando **xUnit** y **Moq**.
 
-Para acceder a los endpoints protegidos, debes incluir el token JWT en la cabecera `Authorization` con el esquema `Bearer`.
+### Cobertura Actual
+-   **ProductsV2Controller:** 11 tests (Filtros, Estadísticas, Stock Bajo)
+-   **CustomersV2Controller:** 8 tests (Historial, Clientes Frecuentes)
+
+### Ejecutar Pruebas
+Para ejecutar las pruebas de la versión 2:
+```bash
+dotnet test Firmeza.Tests/Firmeza.Tests.csproj --filter "FullyQualifiedName~V2"
+```
+
+## Cliente Web (Angular)
+
+El proyecto incluye un cliente web moderno desarrollado en **Angular** que consume la API.
+-   Ubicación: `Firmeza.Client`
+-   Ejecución: `npm start` (en el directorio del cliente)
+-   URL: `http://localhost:4200`
+

@@ -1,5 +1,6 @@
 using AutoMapper;
 using Firmeza.Api.Dtos;
+using Firmeza.Api.Dtos.V2;
 using Firmeza.Core.Entities;
 
 namespace Firmeza.Api.Profiles;
@@ -8,15 +9,25 @@ public class MappingProfile : Profile
 {
     public MappingProfile()
     {
-        // Product Mappings
+        // Product Mappings (v1)
         CreateMap<Product, ProductDto>();
         CreateMap<CreateProductDto, Product>();
         CreateMap<UpdateProductDto, Product>();
 
-        // Customer Mappings
+        // Product Mappings (v2)
+        CreateMap<Product, ProductDtoV2>()
+            .ForMember(dest => dest.TotalSales, opt => opt.Ignore()); // Set manually in controller
+
+        // Customer Mappings (v1)
         CreateMap<Customer, CustomerDto>();
         CreateMap<CreateCustomerDto, Customer>();
         CreateMap<UpdateCustomerDto, Customer>();
+
+        // Customer Mappings (v2)
+        CreateMap<Customer, CustomerDtoV2>()
+            .ForMember(dest => dest.TotalPurchases, opt => opt.Ignore()) // Set manually in controller
+            .ForMember(dest => dest.TotalSpent, opt => opt.Ignore())
+            .ForMember(dest => dest.LastPurchaseDate, opt => opt.Ignore());
 
         // Sale Mappings
         CreateMap<Sale, SaleDto>()

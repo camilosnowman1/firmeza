@@ -23,7 +23,8 @@
   <ItemGroup>
     <ProjectReference Include="..\Firmeza.Core\Firmeza.Core.csproj" />
     <ProjectReference Include="..\Firmeza.Infrastructure\Firmeza.Infrastructure.csproj" />
-    <ProjectReference Include="..\Firmeza.web\Firmeza.web.csproj" /> <!-- Added this line -->
+    <!-- <ProjectReference Include="..\Firmeza.web\Firmeza.web.csproj" /> -->
+    <ProjectReference Include="..\Firmeza.API\Firmeza.API.csproj" />
   </ItemGroup>
 
 </Project>

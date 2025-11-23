@@ -1,7 +1,6 @@
-using Firmeza.Core.Entities;
-using Microsoft.AspNetCore.Identity;
+using Firmeza.Infrastructure.Persistence;
 using Microsoft.AspNetCore.Mvc;
-using Npgsql;
+using Microsoft.EntityFrameworkCore;
 
 namespace Firmeza.Api.Controllers;
 
@@ -9,67 +8,43 @@ namespace Firmeza.Api.Controllers;
 [Route("api/[controller]")]
 public class MigrationController : ControllerBase
 {
-    private readonly IConfiguration _configuration;
+    private readonly ApplicationDbContext _context;
 
-    public MigrationController(IConfiguration configuration)
+    public MigrationController(ApplicationDbContext context)
     {
-        _configuration = configuration;
+        _context = context;
     }
 
     /// <summary>
-    /// Temporary endpoint to add ImageUrl columns to database
-    /// DELETE THIS CONTROLLER AFTER USE!
+    /// TEMPORARY: Clean all products and vehicles to allow reseeding
+    /// DELETE THIS ENDPOINT AFTER USE!
     /// </summary>
-    [HttpPost("add-imageurl-columns")]
-    public async Task<IActionResult> AddImageUrlColumns()
+    [HttpPost("clean-products")]
+    public async Task<IActionResult> CleanProducts()
     {
-        var connectionString = _configuration.GetConnectionString("DefaultConnection");
-        
         try
         {
-            using var connection = new NpgsqlConnection(connectionString);
-            await connection.OpenAsync();
-
-            // Check if columns already exist
-            var checkProductsSql = @"
-                SELECT column_name 
-                FROM information_schema.columns 
-                WHERE table_name='Products' AND column_name='ImageUrl'";
+            // Delete in correct order due to foreign keys
+            await _context.Database.ExecuteSqlRawAsync("DELETE FROM \"SaleDetails\"");
+            await _context.Database.ExecuteSqlRawAsync("DELETE FROM \"Sales\"");
+            await _context.Database.ExecuteSqlRawAsync("DELETE FROM \"Rentals\"");
+            await _context.Database.ExecuteSqlRawAsync("DELETE FROM \"Products\"");
+            await _context.Database.ExecuteSqlRawAsync("DELETE FROM \"Vehicles\"");
             
-            using var checkCmd = new NpgsqlCommand(checkProductsSql, connection);
-            var productsHasColumn = await checkCmd.ExecuteScalarAsync() != null;
-
-            if (!productsHasColumn)
-            {
-                var alterProductsSql = @"ALTER TABLE ""Products"" ADD COLUMN ""ImageUrl"" VARCHAR(500) NULL";
-                using var cmd1 = new NpgsqlCommand(alterProductsSql, connection);
-                await cmd1.ExecuteNonQueryAsync();
-            }
-
-            var checkVehiclesSql = @"
-                SELECT column_name 
-                FROM information_schema.columns 
-                WHERE table_name='Vehicles' AND column_name='ImageUrl'";
-            
-            using var checkCmd2 = new NpgsqlCommand(checkVehiclesSql, connection);
-            var vehiclesHasColumn = await checkCmd2.ExecuteScalarAsync() != null;
-
-            if (!vehiclesHasColumn)
-            {
-                var alterVehiclesSql = @"ALTER TABLE ""Vehicles"" ADD COLUMN ""ImageUrl"" VARCHAR(500) NULL";
-                using var cmd2 = new NpgsqlCommand(alterVehiclesSql, connection);
-                await cmd2.ExecuteNonQueryAsync();
-            }
-
             return Ok(new { 
-                message = "ImageUrl columns added successfully",
-                productsColumnAdded = !productsHasColumn,
-                vehiclesColumnAdded = !vehiclesHasColumn
+                message = "Database cleaned successfully. Restart the application to reseed with ferretería products.",
+                deleted = new {
+                    saleDetails = "all",
+                    sales = "all",
+                    rentals = "all",
+                    products = "all",
+                    vehicles = "all"
+                }
             });
         }
         catch (Exception ex)
         {
-            return BadRequest(new { message = "Failed to add columns", error = ex.Message });
+            return BadRequest(new { message = "Error cleaning database", error = ex.Message });
         }
     }
 }
