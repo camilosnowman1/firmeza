@@ -85,14 +85,22 @@ using (var scope = app.Services.CreateScope())
     }
     catch (Exception ex)
     {
-        // Check for inner exception if it's wrapped
-        if (ex.InnerException is Npgsql.PostgresException pgEx && (pgEx.SqlState == "42P07" || pgEx.SqlState == "42703"))
+        var handled = false;
+        var currentEx = ex;
+        while (currentEx != null)
         {
-            var logger = services.GetRequiredService<ILogger<Program>>();
-            logger.LogWarning(pgEx, "Database schema mismatch detected (SqlState: {SqlState}). Resetting database...", pgEx.SqlState);
-            await ResetDatabaseAsync(context, seeder);
+            if (currentEx is Npgsql.PostgresException pgEx && (pgEx.SqlState == "42P07" || pgEx.SqlState == "42703"))
+            {
+                var logger = services.GetRequiredService<ILogger<Program>>();
+                logger.LogWarning(pgEx, "Database schema mismatch detected (SqlState: {SqlState}). Resetting database...", pgEx.SqlState);
+                await ResetDatabaseAsync(context, seeder);
+                handled = true;
+                break;
+            }
+            currentEx = currentEx.InnerException;
         }
-        else
+
+        if (!handled)
         {
             var logger = services.GetRequiredService<ILogger<Program>>();
             logger.LogError(ex, "An error occurred while migrating or seeding the database.");
