@@ -77,11 +77,35 @@ using (var scope = app.Services.CreateScope())
         await context.Database.MigrateAsync();
         await seeder.SeedAsync();
     }
-    catch (Exception ex)
+    catch (Npgsql.PostgresException ex) when (ex.SqlState == "42P07")
     {
         var logger = services.GetRequiredService<ILogger<Program>>();
-        logger.LogError(ex, "An error occurred while migrating or seeding the database.");
-        throw;
+        logger.LogWarning(ex, "Database tables already exist but migration history is missing. Resetting database...");
+        
+        // If tables exist but migration fails, it means the DB is out of sync.
+        // For this dev environment, we'll drop and recreate it.
+        await context.Database.EnsureDeletedAsync();
+        await context.Database.MigrateAsync();
+        await seeder.SeedAsync();
+    }
+    catch (Exception ex)
+    {
+        // Check for inner exception if it's wrapped in a DbUpdateException or similar
+        if (ex.InnerException is Npgsql.PostgresException pgEx && pgEx.SqlState == "42P07")
+        {
+            var logger = services.GetRequiredService<ILogger<Program>>();
+            logger.LogWarning(pgEx, "Database tables already exist but migration history is missing. Resetting database...");
+            
+            await context.Database.EnsureDeletedAsync();
+            await context.Database.MigrateAsync();
+            await seeder.SeedAsync();
+        }
+        else
+        {
+            var logger = services.GetRequiredService<ILogger<Program>>();
+            logger.LogError(ex, "An error occurred while migrating or seeding the database.");
+            throw;
+        }
     }
 }
 app.Run();
