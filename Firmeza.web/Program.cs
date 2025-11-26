@@ -37,6 +37,7 @@ builder.Services.AddTransient<IEmailService, SmtpEmailService>();
 
 builder.Services.AddControllersWithViews();
 builder.Services.AddTransient<SeedingService>();
+builder.Services.AddTransient<Firmeza.Web.Data.SeedDb>();
 
 var app = builder.Build();
 
@@ -71,6 +72,7 @@ using (var scope = app.Services.CreateScope())
     var services = scope.ServiceProvider;
     var context = services.GetRequiredService<ApplicationDbContext>();
     var seeder = services.GetRequiredService<SeedingService>();
+    var seedDb = services.GetRequiredService<Firmeza.Web.Data.SeedDb>();
 
     try 
     {
@@ -83,7 +85,8 @@ using (var scope = app.Services.CreateScope())
         else
         {
             await context.Database.MigrateAsync();
-            await seeder.SeedAsync();
+            await seedDb.SeedAsync(); // Create admin user and roles first
+            await seeder.SeedAsync(); // Then create products, vehicles, etc.
         }
     }
     catch (Npgsql.PostgresException ex) when (ex.SqlState == "42P07" || ex.SqlState == "42703")
