@@ -74,8 +74,17 @@ using (var scope = app.Services.CreateScope())
 
     try 
     {
-        await context.Database.MigrateAsync();
-        await seeder.SeedAsync();
+        if (args.Contains("--reset-db"))
+        {
+            var logger = services.GetRequiredService<ILogger<Program>>();
+            logger.LogWarning("Manual reset requested via --reset-db flag. Resetting database...");
+            await ResetDatabaseAsync(context, seeder);
+        }
+        else
+        {
+            await context.Database.MigrateAsync();
+            await seeder.SeedAsync();
+        }
     }
     catch (Npgsql.PostgresException ex) when (ex.SqlState == "42P07" || ex.SqlState == "42703")
     {
