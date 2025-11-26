@@ -77,28 +77,20 @@ using (var scope = app.Services.CreateScope())
         await context.Database.MigrateAsync();
         await seeder.SeedAsync();
     }
-    catch (Npgsql.PostgresException ex) when (ex.SqlState == "42P07")
+    catch (Npgsql.PostgresException ex) when (ex.SqlState == "42P07" || ex.SqlState == "42703")
     {
         var logger = services.GetRequiredService<ILogger<Program>>();
-        logger.LogWarning(ex, "Database tables already exist but migration history is missing. Resetting database...");
-        
-        // If tables exist but migration fails, it means the DB is out of sync.
-        // For this dev environment, we'll drop and recreate it.
-        await context.Database.EnsureDeletedAsync();
-        await context.Database.MigrateAsync();
-        await seeder.SeedAsync();
+        logger.LogWarning(ex, "Database schema mismatch detected (SqlState: {SqlState}). Resetting database...", ex.SqlState);
+        await ResetDatabaseAsync(context, seeder);
     }
     catch (Exception ex)
     {
-        // Check for inner exception if it's wrapped in a DbUpdateException or similar
-        if (ex.InnerException is Npgsql.PostgresException pgEx && pgEx.SqlState == "42P07")
+        // Check for inner exception if it's wrapped
+        if (ex.InnerException is Npgsql.PostgresException pgEx && (pgEx.SqlState == "42P07" || pgEx.SqlState == "42703"))
         {
             var logger = services.GetRequiredService<ILogger<Program>>();
-            logger.LogWarning(pgEx, "Database tables already exist but migration history is missing. Resetting database...");
-            
-            await context.Database.EnsureDeletedAsync();
-            await context.Database.MigrateAsync();
-            await seeder.SeedAsync();
+            logger.LogWarning(pgEx, "Database schema mismatch detected (SqlState: {SqlState}). Resetting database...", pgEx.SqlState);
+            await ResetDatabaseAsync(context, seeder);
         }
         else
         {
@@ -108,4 +100,14 @@ using (var scope = app.Services.CreateScope())
         }
     }
 }
+
 app.Run();
+
+static async Task ResetDatabaseAsync(ApplicationDbContext context, SeedingService seeder)
+{
+    // If tables exist but migration fails, it means the DB is out of sync.
+    // For this dev environment, we'll drop and recreate it.
+    await context.Database.EnsureDeletedAsync();
+    await context.Database.MigrateAsync();
+    await seeder.SeedAsync();
+}
