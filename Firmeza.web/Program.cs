@@ -68,7 +68,20 @@ app.MapControllerRoute(
 
 using (var scope = app.Services.CreateScope())
 {
-    var seeder = scope.ServiceProvider.GetRequiredService<SeedingService>();
-    await seeder.SeedAsync();
+    var services = scope.ServiceProvider;
+    var context = services.GetRequiredService<ApplicationDbContext>();
+    var seeder = services.GetRequiredService<SeedingService>();
+
+    try 
+    {
+        await context.Database.MigrateAsync();
+        await seeder.SeedAsync();
+    }
+    catch (Exception ex)
+    {
+        var logger = services.GetRequiredService<ILogger<Program>>();
+        logger.LogError(ex, "An error occurred while migrating or seeding the database.");
+        throw;
+    }
 }
 app.Run();
