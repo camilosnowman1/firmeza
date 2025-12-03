@@ -24,7 +24,7 @@
     <ProjectReference Include="..\Firmeza.Core\Firmeza.Core.csproj" />
     <ProjectReference Include="..\Firmeza.Infrastructure\Firmeza.Infrastructure.csproj" />
     <!-- <ProjectReference Include="..\Firmeza.web\Firmeza.web.csproj" /> -->
-    <ProjectReference Include="..\Firmeza.API\Firmeza.API.csproj" />
+    <ProjectReference Include="..\Firmeza.Api\Firmeza.Api.csproj" />
   </ItemGroup>
 
 </Project>

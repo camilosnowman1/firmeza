@@ -1,10 +1,4 @@
 services:
-  tests:
-    build:
-      context: .
-      dockerfile: Firmeza.Tests/Dockerfile
-    container_name: firmeza_tests
-    # No environment override needed, uses appsettings.json or existing env vars
 
   api:
     build:
