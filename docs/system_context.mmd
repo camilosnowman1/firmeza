@@ -1,0 +1,13 @@
+C4Context
+    title System Context Diagram for Firmeza System
+
+    Person(customer, "Customer", "A customer of Firmeza who buys products or rents vehicles.")
+    Person(admin, "Admin", "An administrator who manages products, vehicles, and views reports.")
+
+    System(firmeza, "Firmeza System", "Allows customers to purchase products and rent vehicles. Allows admins to manage the catalog.")
+
+    System_Ext(email_system, "Email System", "The internal or external SMTP system used to send confirmation emails.")
+
+    Rel(customer, firmeza, "Uses", "HTTPS")
+    Rel(admin, firmeza, "Uses", "HTTPS")
+    Rel(firmeza, email_system, "Sends emails using", "SMTP")

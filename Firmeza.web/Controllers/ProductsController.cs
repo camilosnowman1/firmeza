@@ -4,6 +4,8 @@ using Firmeza.Web.Helpers;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using OfficeOpenXml;
+using System.IO;
 
 namespace Firmeza.Web.Controllers;
 
@@ -79,5 +81,23 @@ public class ProductsController : Controller
     {
         await _productRepository.DeleteAsync(id);
         return RedirectToAction(nameof(Index));
+    }
+
+    public async Task<IActionResult> ExportToExcel()
+    {
+        var products = await _productRepository.GetAllAsync();
+        
+        ExcelPackage.LicenseContext = LicenseContext.NonCommercial;
+        
+        using var package = new ExcelPackage();
+        var worksheet = package.Workbook.Worksheets.Add("Products");
+        worksheet.Cells.LoadFromCollection(products, true);
+        
+        var stream = new MemoryStream();
+        await package.SaveAsAsync(stream);
+        stream.Position = 0;
+        
+        var excelName = $"Products-{DateTime.Now:yyyyMMddHHmmss}.xlsx";
+        return File(stream, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", excelName);
     }
 }

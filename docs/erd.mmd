@@ -1,0 +1,62 @@
+erDiagram
+    ApplicationUser {
+        string Id PK
+        string UserName
+        string Email
+    }
+
+    Customer {
+        int Id PK
+        string FullName
+        string Email
+        string Phone
+    }
+
+    Product {
+        int Id PK
+        string Name
+        decimal Price
+        int Stock
+        string ImageUrl
+    }
+
+    Vehicle {
+        int Id PK
+        string Model
+        string Brand
+        decimal HourlyRate
+        bool IsAvailable
+        string ImageUrl
+    }
+
+    Sale {
+        int Id PK
+        datetime SaleDate
+        decimal TotalAmount
+        int CustomerId FK
+    }
+
+    SaleDetail {
+        int Id PK
+        int SaleId FK
+        int ProductId FK
+        int Quantity
+        decimal UnitPrice
+        decimal TotalPrice
+    }
+
+    Rental {
+        int Id PK
+        int CustomerId FK
+        int VehicleId FK
+        datetime StartDate
+        datetime EndDate
+        decimal TotalAmount
+        datetime CreatedAt
+    }
+
+    Customer ||--o{ Sale : places
+    Customer ||--o{ Rental : books
+    Sale ||--|{ SaleDetail : contains
+    Product ||--o{ SaleDetail : included_in
+    Vehicle ||--o{ Rental : rented_in

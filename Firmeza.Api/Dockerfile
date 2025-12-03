@@ -16,7 +16,7 @@ COPY ["Firmeza.Infrastructure/Firmeza.Infrastructure.csproj", "Firmeza.Infrastru
 COPY ["Firmeza.web/Firmeza.web.csproj", "Firmeza.web/"]
 COPY ["Firmeza.Tests/Firmeza.Tests.csproj", "Firmeza.Tests/"]
 
-RUN dotnet restore "Firmeza.sln"
+RUN dotnet restore "Firmeza.Api/Firmeza.Api.csproj"
 
 # Copy everything else
 COPY . .

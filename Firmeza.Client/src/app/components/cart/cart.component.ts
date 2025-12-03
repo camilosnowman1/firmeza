@@ -32,6 +32,10 @@ export class CartComponent implements OnInit {
     }
 
     updateQuantity(productId: number, quantity: number): void {
+        if (quantity < 1) {
+            alert('Quantity must be at least 1');
+            return;
+        }
         this.cartService.updateQuantity(productId, quantity);
     }
 

@@ -1,0 +1,41 @@
+sequenceDiagram
+    autonumber
+    actor Customer
+    participant ClientApp as Angular Client
+    participant API as SalesController
+    participant Repo as SaleRepository
+    participant ProductRepo as ProductRepository
+    participant Email as EmailService
+    participant DB as Database
+
+    Customer->>ClientApp: Adds products to cart and Checkout
+    ClientApp->>API: POST /api/v1/Sales (CreateSaleDto)
+    activate API
+    
+    API->>DB: Get Customer (Validate)
+    
+    loop For each item
+        API->>ProductRepo: GetByIdAsync(ProductId)
+        activate ProductRepo
+        ProductRepo->>DB: Select Product
+        ProductRepo-->>API: Product
+        deactivate ProductRepo
+        
+        API->>API: Check Stock & Calculate Price
+        API->>ProductRepo: UpdateAsync(Product - Stock)
+    end
+
+    API->>Repo: AddAsync(Sale)
+    activate Repo
+    Repo->>DB: Insert Sale & Details
+    Repo-->>API: Sale Created
+    deactivate Repo
+
+    API->>Email: SendEmailAsync(CustomerEmail, Confirmation)
+    activate Email
+    Email-->>API: Email Sent (or Log Error)
+    deactivate Email
+
+    API-->>ClientApp: 201 Created (SaleDto)
+    deactivate API
+    ClientApp-->>Customer: Show Success Message

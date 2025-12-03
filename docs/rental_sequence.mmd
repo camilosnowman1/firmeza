@@ -1,0 +1,31 @@
+sequenceDiagram
+    autonumber
+    actor Customer
+    participant ClientApp as Angular Client
+    participant API as RentalsController
+    participant Repo as RentalRepository
+    participant VehicleRepo as VehicleRepository
+    participant DB as Database
+
+    Customer->>ClientApp: Selects Vehicle and Dates
+    ClientApp->>API: POST /api/v1/Rentals (CreateRentalDto)
+    activate API
+
+    API->>DB: Get Customer (Validate)
+    API->>VehicleRepo: GetByIdAsync(VehicleId)
+    activate VehicleRepo
+    VehicleRepo->>DB: Select Vehicle
+    VehicleRepo-->>API: Vehicle
+    deactivate VehicleRepo
+
+    API->>API: Validate Dates & Calculate TotalAmount
+
+    API->>Repo: AddAsync(Rental)
+    activate Repo
+    Repo->>DB: Insert Rental
+    Repo-->>API: Rental Created
+    deactivate Repo
+
+    API-->>ClientApp: 201 Created (RentalDto)
+    deactivate API
+    ClientApp-->>Customer: Show Success Message

@@ -1,10 +1,13 @@
 # Dependencies
 /packages
 /node_modules
+Firmeza.Client/node_modules/
 
 # Build results
 [Bb]in/
 [Oo]bj/
+[Dd]ist/
+Firmeza.Client/dist/
 
 # Rider
 .idea/
@@ -26,11 +29,32 @@ appsettings.Development.json
 # Log files
 [Ll]ogs/
 *.log
+*_log.txt
+*_error*.txt
+*_output*.txt
+*_diag*.txt
+buildlog.txt
+test_log.txt
+update_log.txt
+web_build_log*.txt
+api_error_log.txt
+infra_build*.txt
+
+# Docker
+.env
+compose.yaml
+
+# Test Results
+TestResults/
+*.trx
 
 # Other
 *.bak
 *.tmp
-*.txt
 
 # VS Code
 .vscode/
+
+# Old client folder (replaced by Firmeza.Client)
+firmeza-client/
+

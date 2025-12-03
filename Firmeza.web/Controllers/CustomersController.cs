@@ -13,18 +13,18 @@ namespace Firmeza.Web.Controllers;
 public class CustomersController : Controller
 {
     private readonly ICustomerRepository _customerRepository;
-    private readonly IEmailService _emailService; // Add this
+    private readonly IEmailService _emailService;
 
-    public CustomersController(ICustomerRepository customerRepository, IEmailService emailService) // Add this
+    public CustomersController(ICustomerRepository customerRepository, IEmailService emailService)
     {
         _customerRepository = customerRepository;
-        _emailService = emailService; // Add this
+        _emailService = emailService;
     }
 
     public async Task<IActionResult> Index(string searchString, int? pageNumber)
     {
         ViewData["CurrentFilter"] = searchString;
-        var customersQuery = _customerRepository.GetAll(); // Use the new GetAll() returning IQueryable
+        var customersQuery = _customerRepository.GetAll();
 
         if (!string.IsNullOrEmpty(searchString))
         {
@@ -51,7 +51,6 @@ public class CustomersController : Controller
             }
             catch (Exception ex)
             {
-                // Log the exception, but don't block the process
                 Console.WriteLine($"Failed to send welcome email: {ex.Message}");
             }
             
@@ -99,7 +98,10 @@ public class CustomersController : Controller
 
     public async Task<IActionResult> ExportToExcel()
     {
-        var customers = await _customerRepository.GetAllAsync(); // Still use GetAllAsync for export
+        var customers = await _customerRepository.GetAllAsync();
+        
+        ExcelPackage.LicenseContext = LicenseContext.NonCommercial;
+        
         using var package = new ExcelPackage();
         var worksheet = package.Workbook.Worksheets.Add("Customers");
         worksheet.Cells.LoadFromCollection(customers, true);

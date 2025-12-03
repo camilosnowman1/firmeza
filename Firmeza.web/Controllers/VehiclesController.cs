@@ -89,6 +89,9 @@ public class VehiclesController : Controller
     public async Task<IActionResult> ExportToExcel()
     {
         var vehicles = await _context.Vehicles.OrderBy(v => v.Name).ToListAsync();
+        
+        ExcelPackage.LicenseContext = LicenseContext.NonCommercial;
+        
         using var package = new ExcelPackage();
         var worksheet = package.Workbook.Worksheets.Add("Vehicles");
         worksheet.Cells.LoadFromCollection(vehicles, true);

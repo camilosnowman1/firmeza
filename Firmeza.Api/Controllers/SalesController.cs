@@ -65,8 +65,7 @@ public class SalesController : ControllerBase
         sale.SaleDate = DateTime.UtcNow;
         sale.TotalAmount = 0;
 
-        var emailBody = new StringBuilder();
-        emailBody.AppendLine("<thead><tr><th>Producto</th><th>Cantidad</th><th>Precio Unitario</th><th>Total</th></tr></thead><tbody>");
+        var emailRows = new StringBuilder();
 
         foreach (var detailDto in createSaleDto.Items)
         {
@@ -89,27 +88,16 @@ public class SalesController : ControllerBase
             product.Stock -= detailDto.Quantity;
             await _productRepository.UpdateAsync(product);
             
-            emailBody.AppendLine($"<tr><td>{product.Name}</td><td>{detailDto.Quantity}</td><td>{saleDetail.UnitPrice:C}</td><td>{saleDetail.TotalPrice:C}</td></tr>");
+            emailRows.AppendLine($"<tr><td>{product.Name}</td><td>{detailDto.Quantity}</td><td>{saleDetail.UnitPrice:C}</td><td>{saleDetail.TotalPrice:C}</td></tr>");
         }
         
-        emailBody.AppendLine("</tbody>");
-
         await _saleRepository.AddAsync(sale);
 
         // Send confirmation email
         try
         {
             var subject = $"Confirmación de tu compra #{sale.Id}";
-            var fullEmailBody = $@"
-                <h1>¡Gracias por tu compra, {customer.FullName}!</h1>
-                <p>Hemos recibido tu pedido. Aquí están los detalles:</p>
-                <table border='1' cellpadding='10' style='border-collapse: collapse; width: 100%;'>
-                    {emailBody}
-                </table>
-                <h3 style='text-align: right; margin-top: 20px;'>Total: {sale.TotalAmount:C}</h3>
-                <hr>
-                <p>Equipo de Firmeza</p>";
-            
+            var fullEmailBody = GenerateEmailBody(customer.FullName, emailRows.ToString(), sale.TotalAmount);
             await _emailService.SendEmailAsync(customer.Email, subject, fullEmailBody);
         }
         catch (Exception ex)
@@ -119,6 +107,29 @@ public class SalesController : ControllerBase
         }
 
         return CreatedAtAction(nameof(GetSale), new { id = sale.Id, version = HttpContext.GetRequestedApiVersion()?.ToString() }, _mapper.Map<SaleDto>(sale));
+    }
+
+    private string GenerateEmailBody(string customerName, string rows, decimal totalAmount)
+    {
+        return $@"
+            <h1>¡Gracias por tu compra, {customerName}!</h1>
+            <p>Hemos recibido tu pedido. Aquí están los detalles:</p>
+            <table border='1' cellpadding='10' style='border-collapse: collapse; width: 100%;'>
+                <thead>
+                    <tr>
+                        <th>Producto</th>
+                        <th>Cantidad</th>
+                        <th>Precio Unitario</th>
+                        <th>Total</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {rows}
+                </tbody>
+            </table>
+            <h3 style='text-align: right; margin-top: 20px;'>Total: {totalAmount:C}</h3>
+            <hr>
+            <p>Equipo de Firmeza</p>";
     }
 
     // PUT: api/v1/Sales/5

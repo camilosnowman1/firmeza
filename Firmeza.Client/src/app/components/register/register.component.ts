@@ -19,12 +19,34 @@ import { CommonModule } from '@angular/common';
             <div class="card-body">
               <form (ngSubmit)="onSubmit()">
                 <div class="form-group mb-3">
+                  <label for="fullName">Nombre Completo</label>
+                  <input type="text" id="fullName" class="form-control" [(ngModel)]="user.fullName" name="fullName" required #nameModel="ngModel">
+                  <div *ngIf="nameModel.invalid && (nameModel.dirty || nameModel.touched)" class="text-danger">
+                    <div *ngIf="nameModel.errors?.['required']">Full Name is required.</div>
+                  </div>
+                </div>
+                <div class="form-group mb-3">
+                  <label for="document">Documento</label>
+                  <input type="text" id="document" class="form-control" [(ngModel)]="user.document" name="document" required #docModel="ngModel">
+                  <div *ngIf="docModel.invalid && (docModel.dirty || docModel.touched)" class="text-danger">
+                    <div *ngIf="docModel.errors?.['required']">Document is required.</div>
+                  </div>
+                </div>
+                <div class="form-group mb-3">
                   <label for="email">Email</label>
-                  <input type="email" id="email" class="form-control" [(ngModel)]="user.email" name="email" required>
+                  <input type="email" id="email" class="form-control" [(ngModel)]="user.email" name="email" required email #emailModel="ngModel">
+                  <div *ngIf="emailModel.invalid && (emailModel.dirty || emailModel.touched)" class="text-danger">
+                    <div *ngIf="emailModel.errors?.['required']">Email is required.</div>
+                    <div *ngIf="emailModel.errors?.['email']">Invalid email format.</div>
+                  </div>
                 </div>
                 <div class="form-group mb-3">
                   <label for="password">Contraseña</label>
-                  <input type="password" id="password" class="form-control" [(ngModel)]="user.password" name="password" required>
+                  <input type="password" id="password" class="form-control" [(ngModel)]="user.password" name="password" required minlength="6" #passwordModel="ngModel">
+                  <div *ngIf="passwordModel.invalid && (passwordModel.dirty || passwordModel.touched)" class="text-danger">
+                    <div *ngIf="passwordModel.errors?.['required']">Password is required.</div>
+                    <div *ngIf="passwordModel.errors?.['minlength']">Password must be at least 6 characters.</div>
+                  </div>
                 </div>
                 <button type="submit" class="btn btn-primary w-100">Registrarse</button>
               </form>
@@ -41,11 +63,11 @@ import { CommonModule } from '@angular/common';
   `
 })
 export class RegisterComponent {
-  user = { email: '', password: '' };
+  user = { fullName: '', document: '', email: '', password: '' };
   error: string | null = null;
   success: string | null = null;
 
-  constructor(private authService: AuthService, private router: Router) {}
+  constructor(private authService: AuthService, private router: Router) { }
 
   onSubmit(): void {
     this.authService.register(this.user).subscribe({

@@ -19,13 +19,15 @@ public class AuthController : ControllerBase
     private readonly SignInManager<ApplicationUser> _signInManager;
     private readonly IEmailService _emailService;
     private readonly IConfiguration _configuration;
+    private readonly ICustomerRepository _customerRepository; // Add this
 
-    public AuthController(UserManager<ApplicationUser> userManager, SignInManager<ApplicationUser> signInManager, IEmailService emailService, IConfiguration configuration)
+    public AuthController(UserManager<ApplicationUser> userManager, SignInManager<ApplicationUser> signInManager, IEmailService emailService, IConfiguration configuration, ICustomerRepository customerRepository) // Add this
     {
         _userManager = userManager;
         _signInManager = signInManager;
         _emailService = emailService;
         _configuration = configuration;
+        _customerRepository = customerRepository; // Add this
     }
 
     [HttpPost("register")]
@@ -36,12 +38,22 @@ public class AuthController : ControllerBase
 
         if (result.Succeeded)
         {
-            await _userManager.AddToRoleAsync(user, "Cliente"); // Assign Cliente role by default
+            await _userManager.AddToRoleAsync(user, "Cliente");
+            
+            // Create Customer entity
+            var customer = new Customer
+            {
+                FullName = model.FullName,
+                Document = model.Document,
+                Email = model.Email,
+                CreatedAt = DateTime.UtcNow
+            };
+            await _customerRepository.AddAsync(customer);
             
             // Send welcome email
             try
             {
-                await _emailService.SendEmailAsync(user.Email, "Welcome to Firmeza!", "<h1>Thank you for registering!</h1><p>Your account has been created successfully.</p>");
+                await _emailService.SendEmailAsync(user.Email, "Welcome to Firmeza!", $"<h1>Welcome, {model.FullName}!</h1><p>Thank you for registering. Your account has been created successfully.</p>");
             }
             catch (Exception ex)
             {

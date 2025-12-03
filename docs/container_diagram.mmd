@@ -1,0 +1,24 @@
+C4Container
+    title Container Diagram for Firmeza System
+
+    Person(customer, "Customer", "A customer of Firmeza")
+    Person(admin, "Admin", "An administrator")
+
+    System_Boundary(c1, "Firmeza System") {
+        Container(spa, "Single Page Application", "Angular", "Provides functionality for customers to browse and purchase/rent.")
+        Container(web_app, "Web Application", "ASP.NET Core Razor Pages", "Provides functionality for admins to manage the system.")
+        Container(api, "API Application", "ASP.NET Core Web API", "Provides functionality via a JSON/HTTPS API.")
+        ContainerDb(database, "Database", "SQL Server", "Stores user data, products, vehicles, sales, and rentals.")
+    }
+
+    System_Ext(email_system, "Email System", "SMTP Server")
+
+    Rel(customer, spa, "Uses", "HTTPS")
+    Rel(admin, web_app, "Uses", "HTTPS")
+    
+    Rel(spa, api, "Uses", "JSON/HTTPS")
+    Rel(web_app, api, "Uses", "JSON/HTTPS (Internal)")
+    Rel(web_app, database, "Reads/Writes", "EF Core")
+    
+    Rel(api, database, "Reads/Writes", "EF Core")
+    Rel(api, email_system, "Sends emails using", "SMTP")

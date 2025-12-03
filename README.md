@@ -1,94 +1,99 @@
-# Proyecto Firmeza
+# Firmeza Project
 
-Firmeza es un sistema de gestión empresarial diseñado para negocios del sector de la construcción. Incluye un panel administrativo web y una API RESTful para gestionar productos, clientes, ventas y alquileres.
+Firmeza is a business management system designed for the construction sector. It includes a web administrative panel and a RESTful API to manage products, customers, sales, and rentals.
 
-## Módulos del Proyecto
+## Project Modules
 
-La solución está organizada en los siguientes proyectos:
+The solution is organized into the following projects:
 
--   `Firmeza.Core`: Contiene las entidades del dominio, interfaces y la lógica de negocio principal.
--   `Firmeza.Infrastructure`: Implementa la capa de acceso a datos (repositorios con Entity Framework Core), la conexión a la base de datos PostgreSQL y servicios externos como el envío de correos (SMTP).
--   `Firmeza.web`: Un panel administrativo construido con ASP.NET Core y Razor Pages. Permite la gestión interna del negocio, incluyendo la importación de datos desde Excel.
--   `Firmeza.Api`: Una API RESTful construida con ASP.NET Core Web API. Expone los endpoints para ser consumidos por aplicaciones cliente (como un futuro portal Blazor).
--   `Firmeza.Tests`: Proyecto de pruebas unitarias utilizando xUnit para validar la funcionalidad del sistema.
+-   `Firmeza.Core`: Contains domain entities, interfaces, and core business logic.
+-   `Firmeza.Infrastructure`: Implements the data access layer (repositories with Entity Framework Core), PostgreSQL database connection, and external services like email sending (SMTP).
+-   `Firmeza.web`: An administrative panel built with ASP.NET Core and Razor Pages. Allows internal business management, including Excel data import.
+-   `Firmeza.Api`: A RESTful API built with ASP.NET Core Web API. Exposes endpoints to be consumed by client applications (such as a future Blazor portal).
+-   `Firmeza.Tests`: Unit testing project using xUnit to validate system functionality.
 
-## Tecnologías Utilizadas
+## Technologies Used
 
 -   **Backend:** .NET 8, ASP.NET Core (Razor Pages & Web API)
--   **Base de Datos:** PostgreSQL
+-   **Database:** PostgreSQL
 -   **ORM:** Entity Framework Core
--   **Autenticación:** ASP.NET Core Identity con JSON Web Tokens (JWT) para la API.
--   **Mapeo de Objetos:** AutoMapper
--   **Documentación API:** Swashbuckle (Swagger)
--   **Manipulación de Excel:** EPPlus
--   **Generación de PDF:** QuestPDF
--   **Pruebas:** xUnit
--   **Contenerización:** Docker
+-   **Authentication:** ASP.NET Core Identity with JSON Web Tokens (JWT) for the API.
+-   **Object Mapping:** AutoMapper
+-   **API Documentation:** Swashbuckle (Swagger)
+-   **Excel Manipulation:** EPPlus
+-   **PDF Generation:** QuestPDF
+-   **Testing:** xUnit
+-   **Containerization:** Docker
 
-## Instalación y Ejecución
+## Installation and Execution
 
-### Prerrequisitos
+### Prerequisites
 
 -   [.NET 8 SDK](https://dotnet.microsoft.com/download/dotnet/8.0)
--   [Docker](https://www.docker.com/products/docker-desktop) (Opcional, para despliegue)
+-   [Docker](https://www.docker.com/products/docker-desktop) (Optional, for deployment)
 
-### Base de Datos
+### Database
 
-La cadena de conexión se encuentra en los archivos `appsettings.json` de los proyectos `Firmeza.web` y `Firmeza.Api`. Actualmente, está configurada para conectarse a una instancia de PostgreSQL en Clever Cloud.
+The connection string is located in the `appsettings.json` files of the `Firmeza.web` and `Firmeza.Api` projects. Currently, it is configured to connect to a PostgreSQL instance on Clever Cloud.
 
-Si deseas usar una base de datos local, asegúrate de tener PostgreSQL instalado y actualiza la cadena de conexión.
+If you wish to use a local database, ensure you have PostgreSQL installed and update the connection string.
 
-### Ejecutar la Aplicación
+### Running the Application
 
-Puedes ejecutar ambos proyectos simultáneamente desde tu IDE (Rider/Visual Studio) o a través de la línea de comandos:
+You can run both projects simultaneously from your IDE (Rider/Visual Studio) or via the command line:
 
-**Para ejecutar el Panel Web (Razor):**
+**To run the Web Panel (Razor):**
 ```bash
 dotnet run --project Firmeza.web/Firmeza.web.csproj
 ```
-La aplicación estará disponible en `http://localhost:5168`.
+The application will be available at `http://localhost:5168`.
 
-**Para ejecutar la API:**
+**To run the API:**
 ```bash
 dotnet run --project Firmeza.Api/Firmeza.Api.csproj
 ```
-La API estará disponible en `http://localhost:5000`.
+The API will be available at `http://localhost:5000`.
 
-## API Endpoints y Versionamiento
+## API Endpoints and Versioning
 
-La API soporta versionamiento múltiple para garantizar la evolución sin romper la compatibilidad.
+The API supports multiple versioning to ensure evolution without breaking compatibility.
 
-### Versión 1 (`/api/v1`)
-Endpoints estándar CRUD para operaciones básicas.
+### Version 1 (`/api/v1`)
+Standard CRUD endpoints for basic operations.
 
-### Versión 2 (`/api/v2`) - **¡NUEVO!**
-Versión mejorada con funcionalidades avanzadas:
--   **Productos:** Búsqueda avanzada, filtros por precio/stock, estadísticas de inventario, detección de stock bajo.
--   **Clientes:** Historial de compras detallado, identificación de clientes frecuentes, métricas de consumo.
+### Version 2 (`/api/v2`) - **NEW!**
+Enhanced version with advanced features:
+-   **Products:** Advanced search, price/stock filters, inventory statistics, low stock detection.
+-   **Customers:** Detailed purchase history, frequent customer identification, consumption metrics.
 
-### Documentación Swagger
-Puedes explorar y probar ambas versiones interactivamente:
+### Swagger Documentation
+You can interactively explore and test both versions:
 `http://localhost:5000/swagger`
-(Usa el selector en la esquina superior derecha para cambiar entre V1 y V2)
+(Use the selector in the top-right corner to switch between V1 and V2)
 
-## Pruebas Unitarias (Testing)
+## Unit Testing
 
-El proyecto incluye una suite de pruebas unitarias robusta utilizando **xUnit** y **Moq**.
+The project includes a robust unit testing suite using **xUnit** and **Moq**.
 
-### Cobertura Actual
--   **ProductsV2Controller:** 11 tests (Filtros, Estadísticas, Stock Bajo)
--   **CustomersV2Controller:** 8 tests (Historial, Clientes Frecuentes)
+### Current Coverage
+-   **ProductsV2Controller:** 11 tests (Filters, Statistics, Low Stock)
+-   **CustomersV2Controller:** 8 tests (History, Frequent Customers)
 
-### Ejecutar Pruebas
-Para ejecutar las pruebas de la versión 2:
+### Running Tests
+To run version 2 tests:
 ```bash
 dotnet test Firmeza.Tests/Firmeza.Tests.csproj --filter "FullyQualifiedName~V2"
 ```
 
-## Cliente Web (Angular)
+## Web Client (Angular)
 
-El proyecto incluye un cliente web moderno desarrollado en **Angular** que consume la API.
--   Ubicación: `Firmeza.Client`
--   Ejecución: `npm start` (en el directorio del cliente)
+The project includes a modern web client developed in **Angular** that consumes the API.
+-   Location: `Firmeza.Client`
+-   Execution: `npm start` (in the client directory)
 -   URL: `http://localhost:4200`
+
+## Credits
+
+Developed by **Fabian Lugo**, student at **Riwi**.
+
 
