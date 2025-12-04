@@ -28,6 +28,13 @@ builder.Services.AddIdentity<ApplicationUser, IdentityRole>()
     .AddRoles<IdentityRole>()
     .AddRoleManager<RoleManager<IdentityRole>>();
 
+// Configure cookie settings to handle access denied redirects
+builder.Services.ConfigureApplicationCookie(options =>
+{
+    options.AccessDeniedPath = "/Home/Error";
+    options.LoginPath = "/Account/Login";
+});
+
 // 3. Register Repositories and Services
 builder.Services.AddScoped<IProductRepository, ProductRepository>();
 builder.Services.AddScoped<ICustomerRepository, CustomerRepository>();

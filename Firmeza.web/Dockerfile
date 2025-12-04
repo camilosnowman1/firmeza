@@ -21,9 +21,10 @@ COPY ["Firmeza.web/Firmeza.web.csproj", "Firmeza.web/"]
 COPY ["Firmeza.Api/Firmeza.Api.csproj", "Firmeza.Api/"]
 COPY ["Firmeza.Core/Firmeza.Core.csproj", "Firmeza.Core/"]
 COPY ["Firmeza.Infrastructure/Firmeza.Infrastructure.csproj", "Firmeza.Infrastructure/"]
+COPY ["Firmeza.Tests/Firmeza.Tests.csproj", "Firmeza.Tests/"]
 
 # Restore dependencies for the entire solution
-RUN dotnet restore "Firmeza.web/Firmeza.web.csproj"
+RUN dotnet restore "Firmeza.sln"
 
 # Copy the rest of the source code
 COPY . .
